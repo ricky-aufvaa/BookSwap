@@ -1,6 +1,7 @@
 # models/user.py
 from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 import uuid
 from config.database import Base
 from datetime import datetime, timezone
@@ -13,3 +14,6 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     city = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow())
+    
+    # Relationship
+    tokens = relationship("TokenTable", back_populates="user")

@@ -78,14 +78,30 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db)
 ):
+    from models.token import TokenTable
+    
     print("the token is ",token)
     username = decode_token(token.credentials)  # returns username
     print("the user namae is ", username)
+    
+    # Get user
     result = await db.execute(select(User).where(User.username.ilike(username)))
-    # result = await db.execute(select(User).where(User.username.ilike(username)))
     user = result.scalars().first()
     if not user:
         raise HTTPException(404, "User not found")
+    
+    # Check if token is valid in database
+    token_result = await db.execute(
+        select(TokenTable).filter(
+            TokenTable.user_id == user.id,
+            TokenTable.access_token == token.credentials,
+            TokenTable.status == True
+        )
+    )
+    token_record = token_result.scalars().first()
+    if not token_record:
+        raise HTTPException(401, "Token is invalid or has been revoked")
+    
     return user  # Return full user object
 
 # async def get_current_user(token: str = Depends(oauth2_scheme)):

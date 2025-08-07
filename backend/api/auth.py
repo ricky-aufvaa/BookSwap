@@ -3,11 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from jose import jwt
+from fastapi.security import HTTPAuthorizationCredentials
 
 from models.user import User
+from models.token import TokenTable
 from schemas.user import UserCreate, UserLogin, UserOut
 from config.database import get_db
-from utils.auth_utils import create_access_token, hash_password,verify_password
+from config.settings import settings
+from utils.auth_utils import create_access_token, hash_password, verify_password, get_current_user, oauth2_scheme
 
 router = APIRouter(tags=["auth"])
 
@@ -27,6 +32,16 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(db_user)
 
     token = create_access_token(data={"sub": user.username})
+    
+    # Store token in database
+    token_record = TokenTable(
+        user_id=db_user.id,
+        access_token=token,
+        status=True
+    )
+    db.add(token_record)
+    await db.commit()
+    
     return {**db_user.__dict__, "access_token": token, "token_type": "bearer"}
 
 @router.post("/login")
@@ -37,4 +52,64 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
         raise HTTPException(401, "Invalid credentials")
 
     token = create_access_token(data={"sub": user.username})
+    
+    # Store token in database
+    token_record = TokenTable(
+        user_id=db_user.id,
+        access_token=token,
+        status=True
+    )
+    db.add(token_record)
+    await db.commit()
+    
     return {"access_token": token, "token_type": "bearer", "user": {"username": db_user.username, "city": db_user.city}}
+
+@router.get("/validate")
+async def validate_token(current_user: User = Depends(get_current_user)):
+    """
+    Simple endpoint to validate if the current token is valid
+    """
+    return {"valid": True, "username": current_user.username}
+
+@router.post("/logout")
+async def logout(dependencies: HTTPAuthorizationCredentials = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    token = dependencies.credentials
+    payload = jwt.decode(token, settings.SECRET_KEY, settings.ALGORITHM)
+    user_id = payload['sub']
+    
+    # Get user to get user_id as UUID
+    result = await db.execute(select(User).where(User.username == user_id))
+    db_user = result.scalars().first()
+    if not db_user:
+        raise HTTPException(404, "User not found")
+    
+    # Clean up old tokens (older than 1 day)
+    token_result = await db.execute(select(TokenTable))
+    token_records = token_result.scalars().all()
+    info = []
+    for record in token_records:
+        if (datetime.utcnow() - record.created_date).days > 1:
+            info.append(record.user_id)
+    
+    if info:
+        # Delete old tokens
+        from sqlalchemy import delete
+        await db.execute(delete(TokenTable).where(TokenTable.user_id.in_(info)))
+        await db.commit()
+    
+    # Find and invalidate current token
+    existing_token_result = await db.execute(
+        select(TokenTable).filter(
+            TokenTable.user_id == db_user.id, 
+            TokenTable.access_token == token
+        )
+    )
+    existing_token = existing_token_result.scalars().first()
+    
+    if existing_token:
+        existing_token.status = False
+        db.add(existing_token)
+        await db.commit()
+        await db.refresh(existing_token)
+    
+    return {"message": "Logout Successfully"}

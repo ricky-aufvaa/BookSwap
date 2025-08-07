@@ -12,4 +12,5 @@ class Book(Base):
     title = Column(String, nullable=False)
     author = Column(String)
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    owner_username = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

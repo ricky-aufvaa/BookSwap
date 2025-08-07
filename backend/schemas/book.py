@@ -14,6 +14,7 @@ class BookCreate(BookBase):
 class BookOut(BookBase):
     id: UUID4 
     owner_id: UUID4
+    owner_username: str
 
     class Config:
         orm_mode = True
