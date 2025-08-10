@@ -7,6 +7,7 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import MyBooksScreen from '../screens/MyBooksScreen';
 import RequestBooksScreen from '../screens/RequestBooksScreen';
+import ChatListScreen from '../screens/ChatListScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
@@ -36,6 +37,9 @@ const TabNavigator: React.FC = () => {
               break;
             case 'RequestBooks':
               iconName = focused ? 'hand-left' : 'hand-left-outline';
+              break;
+            case 'ChatList':
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
               break;
             case 'Profile':
               iconName = focused ? 'person' : 'person-outline';
@@ -107,6 +111,13 @@ const TabNavigator: React.FC = () => {
         component={RequestBooksScreen}
         options={{
           tabBarLabel: 'Request',
+        }}
+      />
+      <Tab.Screen
+        name="ChatList"
+        component={ChatListScreen}
+        options={{
+          tabBarLabel: 'Messages',
         }}
       />
       <Tab.Screen

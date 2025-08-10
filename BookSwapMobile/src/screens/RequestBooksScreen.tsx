@@ -12,6 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RouteProp } from '@react-navigation/native';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 import Input from '../components/Input';
 import Card from '../components/Card';
@@ -19,10 +21,13 @@ import Button from '../components/Button';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
-import { TabParamList, User } from '../types';
+import { TabParamList, RootStackParamList, User } from '../types';
 import { apiService } from '../services/api';
 
-type RequestBooksScreenNavigationProp = BottomTabNavigationProp<TabParamList, 'RequestBooks'>;
+type RequestBooksScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'RequestBooks'>,
+  StackNavigationProp<RootStackParamList>
+>;
 type RequestBooksScreenRouteProp = RouteProp<TabParamList, 'RequestBooks'>;
 
 interface Props {
@@ -35,6 +40,7 @@ const RequestBooksScreen: React.FC<Props> = ({ navigation }) => {
   const [bookOwners, setBookOwners] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [contactingUser, setContactingUser] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -56,24 +62,23 @@ const RequestBooksScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleContactOwner = (owner: User) => {
-    Alert.alert(
-      'Contact Owner',
-      `Would you like to contact ${owner.username} about "${searchQuery}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Contact',
-          onPress: () => {
-            // In a real app, this would open a messaging interface or contact method
-            Alert.alert(
-              'Contact Information',
-              `You can reach out to ${owner.username} in ${owner.city} about the book "${searchQuery}". In a full implementation, this would provide contact details or messaging functionality.`
-            );
-          },
-        },
-      ]
-    );
+  const handleContactOwner = async (owner: User) => {
+    try {
+      // Create or get existing chat room
+      const chatRoom = await apiService.createOrGetChatRoom({
+        other_user_id: owner.id,
+        book_title: searchQuery.trim()
+      });
+
+      // Navigate to chat room
+      navigation.navigate('ChatRoom', {
+        roomId: chatRoom.id,
+        otherUserName: owner.username,
+        bookTitle: searchQuery.trim()
+      });
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to start chat');
+    }
   };
 
   const renderOwnerItem = ({ item, index }: { item: User; index: number }) => (

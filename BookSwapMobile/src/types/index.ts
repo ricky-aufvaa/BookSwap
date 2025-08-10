@@ -71,6 +71,8 @@ export type RootStackParamList = {
   BookDetails: { book: GoogleBook | Book };
   BookOwners: { bookTitle: string };
   AddBook: undefined;
+  ChatList: undefined;
+  ChatRoom: { roomId: string; otherUserName: string; bookTitle: string };
 };
 
 export type TabParamList = {
@@ -78,6 +80,7 @@ export type TabParamList = {
   Search: undefined;
   MyBooks: undefined;
   RequestBooks: undefined;
+  ChatList: undefined;
   Profile: undefined;
 };
 
@@ -217,4 +220,38 @@ export interface BooksState {
 export interface AppState {
   auth: AuthState;
   books: BooksState;
+}
+
+// Chat types
+export interface ChatMessage {
+  id: string;
+  chat_room_id: string;
+  sender_id: string;
+  sender_username: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface ChatRoom {
+  id: string;
+  user1_id: string;
+  user2_id: string;
+  user1_username: string;
+  user2_username: string;
+  book_title: string;
+  created_at: string;
+  last_message_at: string;
+  last_message?: string;
+  unread_count?: number;
+  messages?: ChatMessage[];
+}
+
+export interface ChatRoomCreate {
+  other_user_id: string;
+  book_title: string;
+}
+
+export interface ChatMessageCreate {
+  message: string;
 }

@@ -8,30 +8,30 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgress:Welcome%40123456@db/bookswap
+      - DATABASE_URL=postgresql+asyncpg://postgres:Welcome%40123456@db/bookswap
+      - ENVIRONMENT=development
     depends_on:
       - db
     restart: on-failure
-
-  frontend:
-    build:
-      context: ./bookswap-mobile
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    restart: on-failure
+    networks:
+      - bookswap-network
 
   db:
     image: postgis/postgis:15-3.3
     environment:
       POSTGRES_DB: bookswap
-      POSTGRES_USER: postgress
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Welcome@123456
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - bookswap-network
+
+networks:
+  bookswap-network:
+    driver: bridge
 
 volumes:
   postgres_data:

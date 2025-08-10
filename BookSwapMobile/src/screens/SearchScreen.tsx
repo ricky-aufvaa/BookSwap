@@ -12,6 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RouteProp } from '@react-navigation/native';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 import Input from '../components/Input';
 import BookCard from '../components/BookCard';
@@ -19,10 +21,13 @@ import Card from '../components/Card';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
-import { TabParamList, GoogleBook } from '../types';
+import { TabParamList, GoogleBook, RootStackParamList } from '../types';
 import { apiService } from '../services/api';
 
-type SearchScreenNavigationProp = BottomTabNavigationProp<TabParamList, 'Search'>;
+type SearchScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Search'>,
+  StackNavigationProp<RootStackParamList>
+>;
 type SearchScreenRouteProp = RouteProp<TabParamList, 'Search'>;
 
 interface Props {
@@ -66,7 +71,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleBookPress = (book: GoogleBook) => {
+  const handleBookPress = async (book: GoogleBook) => {
     // Navigate to book details or show owners
     if (book.available_in_city) {
       // Show book owners
@@ -77,10 +82,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Show Owners',
-            onPress: () => {
-              // Navigate to owners screen (we'll implement this later)
-              Alert.alert('Feature Coming Soon', 'Book owners list will be available soon!');
-            },
+            onPress: () => showBookOwners(book.title),
           },
         ]
       );
@@ -98,6 +100,58 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
           },
         ]
       );
+    }
+  };
+
+  const showBookOwners = async (bookTitle: string) => {
+    try {
+      setLoading(true);
+      const owners = await apiService.searchBookOwners(bookTitle);
+      
+      if (owners.length === 0) {
+        Alert.alert('No Owners Found', 'No owners found for this book in your city.');
+        return;
+      }
+
+      // Show owners in an alert with contact options
+      const ownersList = owners.map((owner, index) => 
+        `${index + 1}. ${owner.username} (${owner.city})`
+      ).join('\n');
+
+      Alert.alert(
+        'Book Owners',
+        `The following people own "${bookTitle}":\n\n${ownersList}`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Contact First Owner',
+            onPress: () => contactOwner(owners[0], bookTitle),
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to find book owners');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const contactOwner = async (owner: any, bookTitle: string) => {
+    try {
+      // Create or get existing chat room
+      const chatRoom = await apiService.createOrGetChatRoom({
+        other_user_id: owner.id,
+        book_title: bookTitle
+      });
+
+      // Navigate to chat room
+      navigation.navigate('ChatRoom', {
+        roomId: chatRoom.id,
+        otherUserName: owner.username,
+        bookTitle: bookTitle
+      });
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to start chat');
     }
   };
 

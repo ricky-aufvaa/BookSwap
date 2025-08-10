@@ -15,8 +15,6 @@ router = APIRouter(prefix="/books", tags=["books"])
 
 @router.post("/", response_model=BookOut, status_code=201)
 async def add_book(book: BookCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    print("current user hai ---", current_user.username)
-    
     db_book = Book(
         title=book.title, 
         author=book.author, 
@@ -30,8 +28,15 @@ async def add_book(book: BookCreate, db: AsyncSession = Depends(get_db), current
 
 @router.get("/", response_model=list[BookOut])
 async def get_my_books(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Book).where(Book.owner_id == current_user.id))
-    return result.scalars().all()
+    try:
+        print(f"Getting books for user: {current_user.username} (ID: {current_user.id})")
+        result = await db.execute(select(Book).where(Book.owner_id == current_user.id))
+        books = result.scalars().all()
+        print(f"Found {len(books)} books for user {current_user.username}")
+        return books
+    except Exception as e:
+        print(f"Error in get_my_books: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch books: {str(e)}")
 
 @router.get("/search", response_model=list)
 async def search_books(query: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):

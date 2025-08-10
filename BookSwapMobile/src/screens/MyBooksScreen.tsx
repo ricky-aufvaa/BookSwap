@@ -118,6 +118,8 @@ const MyBooksScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleAddBook = async (title: string, author: string) => {
+    console.log('handleAddBook called with:', { title, author });
+    
     if (!title.trim() || !author.trim()) {
       Alert.alert('Error', 'Please fill in both title and author fields');
       return;
@@ -125,17 +127,27 @@ const MyBooksScreen: React.FC<Props> = ({ navigation }) => {
 
     setAddingBook(true);
     try {
+      console.log('Calling apiService.addBook with:', {
+        title: title.trim(),
+        author: author.trim(),
+      });
+      
       const newBook = await apiService.addBook({
         title: title.trim(),
         author: author.trim(),
       });
 
+      console.log('Book added successfully:', newBook);
       setBooks(prev => [newBook, ...prev]);
       setShowAddModal(false);
       
+      // Refresh the books list to ensure UI is updated
+      await loadBooks();
+      
       Alert.alert('Success', 'Book added to your library!');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Error adding book:', error);
+      Alert.alert('Error', error.message || 'Failed to add book');
     } finally {
       setAddingBook(false);
     }

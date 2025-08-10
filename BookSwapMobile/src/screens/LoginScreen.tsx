@@ -91,6 +91,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (username: string, password: string) => {
+    console.log('handleLogin called with:', { username, password: '***' });
+    
     if (!username.trim() || !password) {
       Alert.alert('Error', 'Please fill in both username and password');
       return;
@@ -103,14 +105,19 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     setLoading(true);
     try {
+      console.log('Calling apiService.login...');
       const response = await apiService.login({
         username: username.trim(),
         password: password,
       });
 
-      // Authentication successful - AppNavigator will handle navigation automatically
-      Alert.alert('Success', 'Login successful!');
+      console.log('Login successful:', response);
+      // Authentication successful - trigger immediate auth check
+      if ((global as any).forceAuthCheck) {
+        (global as any).forceAuthCheck();
+      }
     } catch (error: any) {
+      console.error('Login error:', error);
       Alert.alert('Login Failed', error.message);
     } finally {
       setLoading(false);

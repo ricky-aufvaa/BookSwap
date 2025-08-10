@@ -1,9 +1,10 @@
 # models/book.py
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 import uuid
 from config.database import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Book(Base):
     __tablename__ = "books"
@@ -14,3 +15,6 @@ class Book(Base):
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     owner_username = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    owner = relationship("User", back_populates="books")

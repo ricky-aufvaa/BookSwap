@@ -62,14 +62,19 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
     db.add(token_record)
     await db.commit()
     
-    return {"access_token": token, "token_type": "bearer", "user": {"username": db_user.username, "city": db_user.city}}
+    return {"access_token": token, "token_type": "bearer", "user": {"id": str(db_user.id), "username": db_user.username, "city": db_user.city}}
 
 @router.get("/validate")
 async def validate_token(current_user: User = Depends(get_current_user)):
     """
     Simple endpoint to validate if the current token is valid
     """
-    return {"valid": True, "username": current_user.username}
+    try:
+        print(f"Token validation successful for user: {current_user.username}")
+        return {"valid": True, "username": current_user.username}
+    except Exception as e:
+        print(f"Token validation failed: {str(e)}")
+        raise HTTPException(status_code=401, detail="Token validation failed")
 
 @router.post("/logout")
 async def logout(dependencies: HTTPAuthorizationCredentials = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):

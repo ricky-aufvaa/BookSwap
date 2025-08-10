@@ -1,20 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-import { User, UserCreate, UserLogin, AuthResponse, Book, BookCreate, GoogleBook } from '../types';
-
-// API Configuration
-// For physical Android devices, you need to use your computer's actual IP address
-// Find your IP with: ipconfig (Windows) or ifconfig (Mac/Linux)
-// Replace 'YOUR_COMPUTER_IP' with your actual IP address (e.g., 192.168.1.100)
-
-// Option 1: Use your computer's IP address (recommended for physical devices)
-const YOUR_COMPUTER_IP = '192.168.1.100'; // Replace with your actual IP address
-
-// Option 2: Use 10.0.2.2 for Android emulator only
-const API_BASE_URL = __DEV__ 
-  ? (Platform.OS === 'android' ? `http://${YOUR_COMPUTER_IP}:8000/api/v1` : 'http://localhost:8000/api/v1')
-  : 'http://localhost:8000/api/v1'; // Update this with your production URL
+import { User, UserCreate, UserLogin, AuthResponse, Book, BookCreate, GoogleBook, ChatRoom, ChatRoomCreate, ChatMessage, ChatMessageCreate } from '../types';
+import { API_CONFIG } from '../config';
 
 const STORAGE_KEYS = {
   TOKEN: 'auth_token',
@@ -26,8 +13,8 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: API_BASE_URL,
-      timeout: 10000,
+      baseURL: API_CONFIG.API_BASE_URL,
+      timeout: API_CONFIG.TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -86,20 +73,32 @@ class ApiService {
 
   async login(credentials: UserLogin): Promise<AuthResponse> {
     try {
+      console.log('ApiService: Attempting login for:', credentials.username);
       const response: AxiosResponse<any> = await this.api.post('/login', credentials);
       const { access_token, user } = response.data;
+      
+      console.log('ApiService: Login response:', { access_token: access_token ? 'present' : 'missing', user });
       
       // Store token and user data
       if (access_token) {
         await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, access_token);
+        console.log('ApiService: Token stored successfully');
       }
       
       if (user) {
-        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        // Add an ID to the user object if it's missing
+        const userWithId = { 
+          id: user.id || 'temp-id', 
+          username: user.username, 
+          city: user.city 
+        };
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userWithId));
+        console.log('ApiService: User data stored:', userWithId);
       }
       
       return { access_token, user, token_type: 'bearer' };
     } catch (error: any) {
+      console.error('ApiService: Login error:', error);
       if (this.isNetworkError(error)) {
         throw new Error('Cannot connect to server. Please check your network connection and ensure the backend server is running.');
       }
@@ -121,9 +120,12 @@ class ApiService {
 
   async validateToken(): Promise<{ valid: boolean; username?: string }> {
     try {
+      console.log('ApiService: Validating token...');
       const response = await this.api.get('/validate');
+      console.log('ApiService: Token validation response:', response.data);
       return response.data;
     } catch (error) {
+      console.error('ApiService: Token validation failed:', error);
       return { valid: false };
     }
   }
@@ -166,6 +168,51 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Failed to find book owners');
+    }
+  }
+
+  // Chat methods
+  async createOrGetChatRoom(chatData: ChatRoomCreate): Promise<ChatRoom> {
+    try {
+      const response: AxiosResponse<ChatRoom> = await this.api.post('/chat/rooms', chatData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to create chat room');
+    }
+  }
+
+  async getChatRooms(): Promise<ChatRoom[]> {
+    try {
+      const response: AxiosResponse<ChatRoom[]> = await this.api.get('/chat/rooms');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch chat rooms');
+    }
+  }
+
+  async getChatRoomWithMessages(roomId: string): Promise<ChatRoom> {
+    try {
+      const response: AxiosResponse<ChatRoom> = await this.api.get(`/chat/rooms/${roomId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch chat room');
+    }
+  }
+
+  async sendMessage(roomId: string, messageData: ChatMessageCreate): Promise<ChatMessage> {
+    try {
+      const response: AxiosResponse<ChatMessage> = await this.api.post(`/chat/rooms/${roomId}/messages`, messageData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to send message');
+    }
+  }
+
+  async deleteChatRoom(roomId: string): Promise<void> {
+    try {
+      await this.api.delete(`/chat/rooms/${roomId}`);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to delete chat room');
     }
   }
 
