@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserCreate, UserLogin, AuthResponse, Book, BookCreate, GoogleBook, ChatRoom, ChatRoomCreate, ChatMessage, ChatMessageCreate } from '../types';
 import { API_CONFIG } from '../config';
+import { getNetworkConfig, NetworkConfig } from '../utils/networkUtils';
 
 const STORAGE_KEYS = {
   TOKEN: 'auth_token',
@@ -232,6 +233,24 @@ class ApiService {
 
   async clearAuthData(): Promise<void> {
     await AsyncStorage.multiRemove([STORAGE_KEYS.TOKEN, STORAGE_KEYS.USER]);
+  }
+
+  // Network configuration methods
+  async reconfigureNetwork(): Promise<boolean> {
+    try {
+      console.log('🔄 Reconfiguring network connection...');
+      const networkConfig = await getNetworkConfig();
+      
+      // Update axios instance with new configuration
+      this.api.defaults.baseURL = networkConfig.baseURL;
+      this.api.defaults.timeout = networkConfig.timeout;
+      
+      console.log('✅ Network reconfigured:', networkConfig);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to reconfigure network:', error);
+      return false;
+    }
   }
 
   // Utility methods

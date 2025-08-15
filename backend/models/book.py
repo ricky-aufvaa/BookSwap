@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from config.database import Base
-from datetime import datetime, timezone
+from datetime import datetime
 
 class Book(Base):
     __tablename__ = "books"

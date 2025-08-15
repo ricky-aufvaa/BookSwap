@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from config.database import Base
-from datetime import datetime, timezone
+from datetime import datetime
 
 class ChatRoom(Base):
     __tablename__ = "chat_rooms"

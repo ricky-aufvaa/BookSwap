@@ -62,10 +62,20 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       // Call the backend logout API first to invalidate the token
       await apiService.logout();
       console.log('Logout successful');
+      
+      // Trigger immediate auth check to update UI
+      if ((global as any).forceAuthCheck) {
+        (global as any).forceAuthCheck();
+      }
     } catch (error: any) {
       console.log('Logout error:', error);
       // Even if API call fails, we still want to clear local data
       await apiService.clearAuthData();
+      
+      // Still trigger auth check even if API call failed
+      if ((global as any).forceAuthCheck) {
+        (global as any).forceAuthCheck();
+      }
     } finally {
       setLoggingOut(false);
     }

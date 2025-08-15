@@ -118,7 +118,43 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      Alert.alert('Login Failed', error.message);
+      
+      // If it's a network error, try to reconfigure the network and retry once
+      if (error.message.includes('Cannot connect to server')) {
+        console.log('🔄 Network error detected, attempting to reconfigure...');
+        
+        try {
+          const reconfigured = await apiService.reconfigureNetwork();
+          if (reconfigured) {
+            console.log('🔄 Retrying login with new network configuration...');
+            const retryResponse = await apiService.login({
+              username: username.trim(),
+              password: password,
+            });
+            
+            console.log('✅ Login successful after network reconfiguration:', retryResponse);
+            if ((global as any).forceAuthCheck) {
+              (global as any).forceAuthCheck();
+            }
+            return; // Success, exit the function
+          }
+        } catch (retryError: any) {
+          console.error('❌ Retry login failed:', retryError);
+        }
+        
+        // If reconfiguration or retry failed, show network-specific error
+        Alert.alert(
+          'Connection Failed', 
+          'Cannot connect to the server. Please ensure:\n\n' +
+          '1. Your device and computer are on the same WiFi network\n' +
+          '2. The backend server is running on your computer\n' +
+          '3. Your computer\'s firewall allows connections on port 8000\n\n' +
+          'Check the console logs for more details.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Login Failed', error.message);
+      }
     } finally {
       setLoading(false);
     }

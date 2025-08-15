@@ -1,37 +1,53 @@
-# docker-compose.yml
-version: '3.8'
+# # docker-compose.yml
+# version: '3.8'
+
+# services:
+#   backend:
+#     build:
+#       context: ./backend
+#     ports:
+#       - "8000:8000"
+#     environment:
+#       - DATABASE_URL=postgresql+asyncpg://postgres:Welcome%40123456@db/bookswap
+#       - ENVIRONMENT=development
+#     depends_on:
+#       - db
+#     restart: on-failure
+#     networks:
+#       - bookswap-network
+
+#   db:
+#     image: postgis/postgis:15-3.3
+#     environment:
+#       POSTGRES_DB: bookswap
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: Welcome@123456
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     ports:
+#       - "5432:5432"
+#     networks:
+#       - bookswap-network
+
+# networks:
+#   bookswap-network:
+#     driver: bridge
+
+# volumes:
+#   postgres_data:
+
+# docker-compose.prod.yml
 
 services:
   backend:
     build:
       context: ./backend
     ports:
-      - "8000:8000"
+      - "8000:8000"           # Port mapping only needed if testing locally
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:Welcome%40123456@db/bookswap
-      - ENVIRONMENT=development
-    depends_on:
-      - db
+        - DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_pRiWKt0yda8c@ep-sparkling-leaf-a1ipinyg-pooler.ap-southeast-1.aws.neon.tech/neondb
+        - ENVIRONMENT=production
+    # environment:
+    #   - DATABASE_URL=postgresql+asyncpg://<USER>:<PASSWORD>@<HOST>:<PORT>/<DBNAME>
+    #   - ENVIRONMENT=production
     restart: on-failure
-    networks:
-      - bookswap-network
-
-  db:
-    image: postgis/postgis:15-3.3
-    environment:
-      POSTGRES_DB: bookswap
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Welcome@123456
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - bookswap-network
-
-networks:
-  bookswap-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
