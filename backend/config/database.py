@@ -6,7 +6,13 @@ from sqlalchemy import text
 import ssl
 from config.settings import settings
 ssl_context=ssl.create_default_context()
-engine = create_async_engine(settings.DATABASE_URL, echo=True, connect_args={"ssl":ssl_context})
+engine = create_async_engine(settings.DATABASE_URL, echo=True, connect_args={"ssl":ssl_context},
+    pool_size=10,          # number of connections in pool
+    max_overflow=5,        # extra connections beyond pool_size
+    pool_timeout=30,       # seconds to wait for a connection
+    pool_recycle=1800      # recycle connections every 30 minutes
+
+)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()
