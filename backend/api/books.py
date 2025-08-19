@@ -45,32 +45,46 @@ async def search_books(query: str, db: AsyncSession = Depends(get_db), current_u
 
     google_books = await search_google_books(query)
 
-    # if not current_user.city:
-    #     return google_books
+    # Check if current user has a city
+    if not current_user.city:
+        print(f"Current user {current_user.username} has no city set")
+        return google_books
 
-    # # Get users in the same city
-    city_users = await db.execute(select(User.id).where(User.city == current_user.city, User.username != current_user.username))
-    print(f"city_users {city_users}")
-    try:
-        city_user_ids = [u.id for u in city_users.scalars().all()]
-    except:
-    # if not city_user_ids:
-        print(f"city users are {city_users.scalars().all()}")
+    print(f"Searching for users in city: {current_user.city}")
+    
+    # Get users in the same city (excluding current user)
+    city_users_result = await db.execute(
+        select(User).where(
+            User.city == current_user.city, 
+            User.username != current_user.username
+        )
+    )
+    city_users = city_users_result.scalars().all()
+    print(f"Found {len(city_users)} users in city {current_user.city}")
+    
+    if not city_users:
+        print(f"No other users found in city {current_user.city}")
         return google_books
     
-    
+    # Extract user IDs
+    city_user_ids = [user.id for user in city_users]
+    print(f"City user IDs: {city_user_ids}")
 
-    # # Get books owned by users in the same city
-    city_books = await db.execute(select(Book).where(Book.owner_id.in_(city_user_ids)))
-    city_book_titles = {b.title.lower() for b in city_books.scalars().all()}
+    # Get books owned by users in the same city
+    city_books_result = await db.execute(select(Book).where(Book.owner_id.in_(city_user_ids)))
+    city_books = city_books_result.scalars().all()
+    print(f"Found {len(city_books)} books owned by users in {current_user.city}")
+    
+    # Create a set of book titles (lowercase for case-insensitive matching)
+    city_book_titles = {book.title.lower() for book in city_books}
+    print(f"Available book titles in city: {city_book_titles}")
 
     # Add availability information to Google Books results
     for book in google_books:
         title_lower = book["title"].lower()
         book["available_in_city"] = title_lower in city_book_titles
-        book["local_owners_count"] = sum(1 for b in city_books.scalars().all() if b.title.lower() == title_lower)
-        print(f"available in the city are {book['available_in_city']}")
-        print(f"locall owner count is {book['local_owners_count']}")
+        book["local_owners_count"] = sum(1 for city_book in city_books if city_book.title.lower() == title_lower)
+        print(f"Book '{book['title']}' - Available in city: {book['available_in_city']}, Local owners: {book['local_owners_count']}")
 
     return google_books
 
