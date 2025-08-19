@@ -148,7 +148,7 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
       <KeyboardAvoidingView 
         style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 100}
       >
         <FlatList
           ref={flatListRef}
@@ -260,20 +260,23 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   inputContainer: {
-    borderTopWidth: 1,
+    borderTopWidth: 5,
     borderTopColor: colors.border,
     backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   inputWrapper: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    // marginBottom: -30,
+    // alignItems: 'flex-end',
     backgroundColor: colors.background,
     borderRadius: 25,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
+    // paddingVertical: spacing.xs,
     paddingVertical: spacing.xs,
   },
   textInput: {
@@ -281,7 +284,7 @@ const styles = StyleSheet.create({
     ...textStyles.body,
     color: colors.textPrimary,
     maxHeight: 100,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   sendButton: {
     backgroundColor: colors.primary,

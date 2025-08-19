@@ -10,6 +10,7 @@ engine = create_async_engine(settings.DATABASE_URL, echo=True, connect_args={"ss
     pool_size=10,          # number of connections in pool
     max_overflow=5,        # extra connections beyond pool_size
     pool_timeout=30,       # seconds to wait for a connection
+    pool_pre_ping=True,  # Verify connection before use
     pool_recycle=1800      # recycle connections every 30 minutes
 
 )

@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/blur": "^4.4.1",
@@ -16,10 +17,12 @@
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.5",
     "axios": "^1.11.0",
+    "eas-cli": "^16.17.4",
     "expo": "~53.0.20",
     "expo-status-bar": "~2.2.3",
     "lottie-react-native": "7.2.2",
     "react": "19.0.0",
+    "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-animatable": "^1.4.0",
     "react-native-elements": "^3.4.3",
@@ -30,9 +33,7 @@
     "react-native-screens": "~4.11.1",
     "react-native-super-grid": "^6.0.1",
     "react-native-vector-icons": "^10.3.0",
-    "react-dom": "19.0.0",
-    "react-native-web": "^0.20.0",
-    "@expo/metro-runtime": "~5.0.4"
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

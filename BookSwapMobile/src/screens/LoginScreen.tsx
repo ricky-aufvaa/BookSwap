@@ -66,6 +66,7 @@ const LoginFormComponent = React.memo<{
         secureTextEntry
         leftIcon="lock-closed-outline"
         autoComplete="current-password"
+        autoCapitalize="none"
       />
 
       <Button
