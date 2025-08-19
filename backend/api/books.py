@@ -51,10 +51,10 @@ async def search_books(query: str, db: AsyncSession = Depends(get_db), current_u
     # # Get users in the same city
     city_users = await db.execute(select(User.id).where(User.city == current_user.city, User.username != current_user.username))
     print(f"city_users {city_users}")
-    try:
-        city_user_ids = [u.id for u in city_users.scalars().all()]
-    except:
-    # if not city_user_ids:
+    # try:
+    city_user_ids = [u.id for u in city_users.scalars().all()]
+    # except:
+    if not city_user_ids:
         return google_books
     
     
