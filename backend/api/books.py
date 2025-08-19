@@ -52,7 +52,7 @@ async def search_books(query: str, db: AsyncSession = Depends(get_db), current_u
     city_users = await db.execute(select(User.id).where(User.city == current_user.city, User.username != current_user.username))
     print(f"city_users {city_users}")
     try:
-        city_user_ids = [u.id for u in city_users.scalars().all()]
+        city_user_ids = [u.id for u in city_users.scalers().all()]
     except:
     # if not city_user_ids:
         print(f"city users are {city_users.scalers().all()}")
