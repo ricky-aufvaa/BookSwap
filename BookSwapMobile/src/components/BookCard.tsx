@@ -34,15 +34,19 @@ const BookCard: React.FC<BookCardProps> = ({
     if (isGoogleBook(book)) {
       // Handle both data structures:
       // 1. Standard Google Books API format: book.imageLinks?.thumbnail
-      // 2. Backend processed format: book.thumbnail
-      let imageUrl = book.imageLinks?.thumbnail || (book as any).thumbnail || null;
+      // 2. Backend processed format: book.thumbnail (this is what we're actually getting)
+      let imageUrl = (book as any).thumbnail || book.imageLinks?.thumbnail || null;
       
       // Debug logging to see what URLs we're getting
+      console.log('BookCard - Checking for image URL...');
+      console.log('BookCard - book.thumbnail:', (book as any).thumbnail);
+      console.log('BookCard - book.imageLinks?.thumbnail:', book.imageLinks?.thumbnail);
+      
       if (imageUrl) {
         console.log('BookCard - Image URL found:', imageUrl);
       } else {
         console.log('BookCard - No image URL found for book:', book.title);
-        console.log('BookCard - Book data:', JSON.stringify(book, null, 2));
+        console.log('BookCard - Book data keys:', Object.keys(book));
       }
       
       // Convert HTTP to HTTPS for security and compatibility
@@ -137,9 +141,17 @@ const BookCard: React.FC<BookCardProps> = ({
                 source={{ uri: getBookImage()! }}
                 style={styles.bookImage}
                 resizeMode="cover"
-                onLoadStart={() => setImageLoading(true)}
-                onLoadEnd={() => setImageLoading(false)}
-                onError={() => {
+                onLoadStart={() => {
+                  console.log('BookCard - Image load started for:', getBookImage());
+                  setImageLoading(true);
+                }}
+                onLoadEnd={() => {
+                  console.log('BookCard - Image load ended successfully for:', getBookImage());
+                  setImageLoading(false);
+                }}
+                onError={(error) => {
+                  console.log('BookCard - Image load error for:', getBookImage());
+                  console.log('BookCard - Error details:', error.nativeEvent.error);
                   setImageError(true);
                   setImageLoading(false);
                 }}
