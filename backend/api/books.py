@@ -68,8 +68,8 @@ async def search_books(query: str, db: AsyncSession = Depends(get_db), current_u
         title_lower = book["title"].lower()
         book["available_in_city"] = title_lower in city_book_titles
         book["local_owners_count"] = sum(1 for b in city_books.scalars().all() if b.title.lower() == title_lower)
-        print(f"available in the city are {books["available_in_city"]}")
-        print(f"locall owner count is {books["local_owners_count"]}")
+        print(f"available in the city are {book["available_in_city"]}")
+        print(f"locall owner count is {book["local_owners_count"]}")
 
     return google_books
 
