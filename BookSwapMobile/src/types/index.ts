@@ -55,10 +55,14 @@ export interface GoogleBook {
   publisher?: string;
   published_date?: string;
   isbn?: string;
+  average_rating?: number;
+  ratings_count?: number;
+  page_count?: number;
+  categories?: string[];
+  relevance_score?: number;
   // Original Google Books API format
   publishedDate?: string;
   pageCount?: number;
-  categories?: string[];
   averageRating?: number;
   ratingsCount?: number;
   available_in_city?: boolean;

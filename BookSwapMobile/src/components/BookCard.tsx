@@ -80,11 +80,19 @@ const BookCard: React.FC<BookCardProps> = ({
   };
 
   const getRating = () => {
-    if (isGoogleBook(book) && book.averageRating) {
-      return {
-        rating: book.averageRating,
-        count: book.ratingsCount || 0,
-      };
+    if (isGoogleBook(book)) {
+      // Handle both data structures:
+      // 1. Standard Google Books API format: book.averageRating, book.ratingsCount
+      // 2. Backend processed format: book.average_rating, book.ratings_count
+      const rating = book.averageRating || (book as any).average_rating;
+      const count = book.ratingsCount || (book as any).ratings_count || 0;
+      
+      if (rating) {
+        return {
+          rating: rating,
+          count: count,
+        };
+      }
     }
     return null;
   };
