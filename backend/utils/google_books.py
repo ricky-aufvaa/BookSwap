@@ -34,7 +34,8 @@ async def search_google_books(query: str, max_results: int = 10):
                 ratings_count = vol.get("ratingsCount", 0)
                 if avg_rating and ratings_count:
                     # Weight by both rating and number of ratings
-                    relevance_score += (avg_rating / 5.0) * min(ratings_count / 100, 5)
+                    # relevance_score += (avg_rating / 5.0) * min(ratings_count / 100, 5)
+                    relevance_score = avg_rating + ratings_count
                 
                 # Publication recency factor (0-2 points for books published in last 100 years)
                 # pub_date = vol.get("publishedDate", "")
@@ -57,15 +58,15 @@ async def search_google_books(query: str, max_results: int = 10):
                 
                 # Availability factor (0-1 points)
                 if sale_info.get("saleability") in ["FOR_SALE", "FREE"]:
-                    relevance_score += 1
+                    relevance_score += 0.5
                 
                 # Has description factor (0-0.5 points)
                 if vol.get("description"):
-                    relevance_score += 2
+                    relevance_score += 1
                 
                 # Has thumbnail factor (0-0.5 points)
                 if vol.get("imageLinks", {}).get("thumbnail"):
-                    relevance_score += 2
+                    relevance_score += 1
 
                 # Extract thumbnail URL with debugging
                 thumbnail_url = vol.get("imageLinks", {}).get("thumbnail", "")
