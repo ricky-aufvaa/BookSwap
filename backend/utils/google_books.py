@@ -84,7 +84,7 @@ async def search_google_books(query: str, max_results: int = 10):
                                 if id['type'] in ['ISBN_10', 'ISBN_13']), None),
                     "average_rating": avg_rating,
                     "ratings_count": ratings_count,
-                    "page_count": page_count,
+                    # "page_count": page_count,
                     "categories": vol.get("categories", []),
                     "relevance_score": relevance_score
                 }
