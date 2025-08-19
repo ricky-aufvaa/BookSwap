@@ -151,14 +151,35 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await apiService.signup({
+      // First create the account
+      await apiService.signup({
         username: username.trim(),
         password: password,
         city: city.trim(),
       });
 
-      // Authentication successful - AppNavigator will handle navigation automatically
-      Alert.alert('Success', 'Account created successfully!');
+      // Then immediately login to get proper authentication
+      await apiService.login({
+        username: username.trim(),
+        password: password,
+      });
+
+      // Show success dialog and navigate after dismissal
+      Alert.alert(
+        'Success', 
+        'Account created successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Trigger auth check to automatically navigate to home screen
+              if ((global as any).forceAuthCheck) {
+                (global as any).forceAuthCheck();
+              }
+            }
+          }
+        ]
+      );
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message);
     } finally {
