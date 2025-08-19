@@ -74,13 +74,28 @@ async def search_google_books(query: str, max_results: int = 10):
                     "published_date": vol.get("publishedDate", "Unknown"),
                     "description": vol.get("description", ""),
                     "thumbnail": vol.get("imageLinks", {}).get("thumbnail", ""),
-                    "isbn": next((id['identifier'] for id in vol.get("industryIdentifiers", []) if id['type'] in ['ISBN_10', 'ISBN_13']), None),
+                    "isbn": next((id['identifier'] for id in vol.get("industryIdentifiers", []) 
+                                if id['type'] in ['ISBN_10', 'ISBN_13']), None),
                     "average_rating": avg_rating,
                     "ratings_count": ratings_count,
                     "page_count": page_count,
                     "categories": vol.get("categories", []),
                     "relevance_score": relevance_score
-                }
+}
+                # book_data = {
+                #     "title": vol.get("title", "Unknown"),
+                #     "author": ", ".join(vol.get("authors", ["Unknown"])),
+                #     "publisher": vol.get("publisher", "Unknown"),
+                #     "published_date": vol.get("publishedDate", "Unknown"),
+                #     "description": vol.get("description", ""),
+                #     "thumbnail": vol.get("imageLinks", {}).get("thumbnail", ""),
+                #     "isbn": next((id['identifier'] for id in vol.get("industryIdentifiers", []) if id['type'] in ['ISBN_10', 'ISBN_13']), None),
+                #     "average_rating": avg_rating,
+                #     "ratings_count": ratings_count,
+                #     "page_count": page_count,
+                #     "categories": vol.get("categories", []),
+                #     "relevance_score": relevance_score
+                # }
                 
                 books.append(book_data)
             
