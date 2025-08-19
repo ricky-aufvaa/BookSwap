@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
+import HapticFeedback from '../utils/haptics';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
@@ -130,6 +131,8 @@ const Button: React.FC<ButtonProps> = ({
         event.preventDefault();
         event.stopPropagation();
       }
+      // Trigger haptic feedback based on button variant
+      HapticFeedback.button(variant);
       onPress();
     }
   };
@@ -138,6 +141,10 @@ const Button: React.FC<ButtonProps> = ({
     if (event) {
       event.preventDefault();
       event.stopPropagation();
+    }
+    // Light haptic feedback on press start
+    if (!disabled && !loading) {
+      HapticFeedback.light();
     }
   };
 

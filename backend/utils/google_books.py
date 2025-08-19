@@ -3,7 +3,7 @@ import httpx
 from fastapi import HTTPException
 from config.settings import settings
 
-async def search_google_books(query: str, max_results: int = 5):
+async def search_google_books(query: str, max_results: int = 10):
     params = {
         "q": query,
         "key": settings.GOOGLE_BOOKS_API_KEY,

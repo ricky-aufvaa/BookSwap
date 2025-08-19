@@ -6,7 +6,7 @@ import * as Animatable from 'react-native-animatable';
 import { Ionicons } from '@expo/vector-icons';
 
 import AuthNavigator from './AuthNavigator';
-import TabNavigator from './TabNavigator';
+import SwipeableTabNavigator from './SwipeableTabNavigator';
 import ChatListScreen from '../screens/ChatListScreen';
 import ChatRoomScreen from '../screens/ChatRoomScreen';
 import { colors } from '../constants/colors';
@@ -119,7 +119,7 @@ const AppNavigator: React.FC = () => {
       >
         {isAuthenticated ? (
           <>
-            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="Main" component={SwipeableTabNavigator} />
             <Stack.Screen 
               name="ChatList" 
               component={ChatListScreen}

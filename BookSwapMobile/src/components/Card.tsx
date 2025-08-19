@@ -6,6 +6,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
+import HapticFeedback from '../utils/haptics';
 import { colors } from '../constants/colors';
 import { spacing, layout } from '../constants/spacing';
 import { CardProps } from '../types';
@@ -36,6 +37,19 @@ const Card: React.FC<CardProps> = ({
     </View>
   );
 
+  const handlePress = () => {
+    if (onPress) {
+      // Trigger light haptic feedback for card interactions
+      HapticFeedback.card();
+      onPress();
+    }
+  };
+
+  const handlePressIn = () => {
+    // Very subtle haptic feedback on press start
+    HapticFeedback.selection();
+  };
+
   if (onPress) {
     return (
       <Animatable.View
@@ -43,10 +57,10 @@ const Card: React.FC<CardProps> = ({
         duration={layout.animation.normal}
       >
         <TouchableOpacity
-          onPress={onPress}
+          onPress={handlePress}
           activeOpacity={0.95}
           style={styles.touchable}
-          onPressIn={() => {}}
+          onPressIn={handlePressIn}
           onPressOut={() => {}}
         >
           <CardContent />
