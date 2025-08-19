@@ -186,7 +186,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         </Animatable.View>
 
         {/* Menu Options */}
-        <Animatable.View
+        {/* <Animatable.View
           animation="fadeInUp"
           duration={layout.animation.normal}
           delay={300}
@@ -233,7 +233,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Ionicons name="chevron-forward-outline" size={20} color={colors.textTertiary} />
             </View>
           </Card>
-        </Animatable.View>
+        </Animatable.View> */}
 
         {/* Logout Button */}
         <Animatable.View
@@ -277,8 +277,8 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    // justifyContent: 'center',
+    // alignItems: 'center',
   },
   loadingCard: {
     alignItems: 'center',
@@ -342,6 +342,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     gap: spacing.md,
+    justifyContent:'center',
     marginBottom: spacing.lg,
   },
   statCard: {
@@ -389,6 +390,8 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   logoutContainer: {
+    // bottom:'auto',
+    marginTop:spacing['5xl'],
     marginBottom: spacing.xl,
   },
   appInfoContainer: {

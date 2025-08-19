@@ -54,7 +54,7 @@ const TabNavigator: React.FC = () => {
               duration={300}
             >
               {/* <Ionicons name={iconName as any} size={size} color={color} /> */}
-              <Ionicons name={iconName as any} size={size=18} color={color} />
+              <Ionicons name={iconName as any} size={size=20} color={color} />
             </Animatable.View>
           );
         },
@@ -62,11 +62,12 @@ const TabNavigator: React.FC = () => {
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
           backgroundColor: colors.background,
-          borderTopWidth: 1,
+          borderTopWidth: 2,
           borderTopColor: colors.border,
           paddingTop: spacing.xs,
           paddingBottom: spacing.sm,
-          height: 100,
+          paddingHorizontal:spacing.xl,
+          height: 80,
           shadowColor: colors.shadow,
           shadowOffset: {
             width: 0,
@@ -91,42 +92,48 @@ const TabNavigator: React.FC = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: '',
+          // tabBarLabel: 'Home',
         }}
       />
       <Tab.Screen
         name="Search"
         component={SearchScreen}
         options={{
-          tabBarLabel: 'Search',
+          tabBarLabel: '',
+          // tabBarLabel: 'Search',
         }}
       />
       <Tab.Screen
         name="MyBooks"
         component={MyBooksScreen}
         options={{
-          tabBarLabel: 'My Books',
+          // tabBarLabel: 'My Books',
+          tabBarLabel: '',
         }}
       />
       <Tab.Screen
         name="RequestBooks"
         component={RequestBooksScreen}
         options={{
-          tabBarLabel: 'Request',
+          // tabBarLabel: 'Request',
+          tabBarLabel: '',
         }}
       />
       <Tab.Screen
         name="ChatList"
         component={ChatListScreen}
         options={{
-          tabBarLabel: 'Messages',
+          tabBarLabel: '',
+          // tabBarLabel: 'Messages',
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Profile',
+          // tabBarLabel: 'Profile',
+          tabBarLabel: '',
         }}
       />
     </Tab.Navigator>

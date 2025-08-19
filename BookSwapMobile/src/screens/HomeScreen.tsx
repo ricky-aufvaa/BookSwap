@@ -188,7 +188,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               <Button
                 title="View All"
                 onPress={() => navigation.navigate('MyBooks')}
-                variant="ghost"
+                variant="secondary"
                 size="small"
               />
             </View>
