@@ -202,7 +202,7 @@ const MyBooksScreen: React.FC<Props> = ({ navigation }) => {
           <Button
             title="Cancel"
             onPress={() => setShowAddModal(false)}
-            variant="ghost"
+            variant="primary"
             size="small"
           />
           <Text style={styles.modalTitle}>Add Book</Text>

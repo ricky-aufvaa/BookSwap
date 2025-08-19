@@ -115,7 +115,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             <Button
               title="Search Books"
               onPress={() => navigation.navigate('Search')}
-              variant="outline"
+              variant="primary"
               size="small"
               icon="search-outline"
             />
@@ -266,14 +266,14 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: spacing.lg,
   },
   greetingContainer: {
     flex: 1,
   },
   greeting: {
-    ...textStyles.h2,
+    ...textStyles.h3,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     marginBottom: spacing.lg,
+    borderRadius: 22
   },
   statsContainer: {
     flexDirection: 'row',
@@ -326,14 +327,15 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
-    gap: spacing.md,
+    justifyContent: 'center',
+    gap: spacing.md
   },
   actionCard: {
     flex: 1,
   },
   actionContent: {
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.sm,
   },
   actionTitle: {
     ...textStyles.label,

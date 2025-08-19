@@ -69,7 +69,7 @@
 // apiConfig.ts
 import { Platform } from 'react-native';
 
-const DEPLOYED_URL = "https://bookswap-9mez.onrender.com"; // Your live backend
+const DEPLOYED_URL = "https://bookswap-yb6p.onrender.com"; // Your live backend
 
 const config = {
   development: {

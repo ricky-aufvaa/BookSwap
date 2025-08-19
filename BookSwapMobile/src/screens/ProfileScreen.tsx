@@ -245,7 +245,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Button
             title="Logout"
             onPress={handleLogout}
-            variant="outline"
+            variant="primary"
             loading={loggingOut}
             fullWidth
             icon="log-out-outline"

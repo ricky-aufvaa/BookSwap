@@ -196,7 +196,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <Button
               title="Sign Up"
               onPress={() => navigation.navigate('Signup')}
-              variant="ghost"
+              variant="primary"
               size="small"
             />
           </View>
@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
+    gap: spacing.md
   },
   footerText: {
     ...textStyles.body,

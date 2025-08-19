@@ -53,7 +53,8 @@ const TabNavigator: React.FC = () => {
               animation={focused ? 'bounceIn' : undefined}
               duration={300}
             >
-              <Ionicons name={iconName as any} size={size} color={color} />
+              {/* <Ionicons name={iconName as any} size={size} color={color} /> */}
+              <Ionicons name={iconName as any} size={size=18} color={color} />
             </Animatable.View>
           );
         },
@@ -63,9 +64,9 @@ const TabNavigator: React.FC = () => {
           backgroundColor: colors.background,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          paddingTop: spacing.sm,
+          paddingTop: spacing.xs,
           paddingBottom: spacing.sm,
-          height: 80,
+          height: 100,
           shadowColor: colors.shadow,
           shadowOffset: {
             width: 0,
@@ -74,6 +75,7 @@ const TabNavigator: React.FC = () => {
           shadowOpacity: 0.1,
           shadowRadius: 4,
           elevation: 8,
+          
         },
         tabBarLabelStyle: {
           ...textStyles.caption,
