@@ -15,6 +15,7 @@ import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
 import { BookCardProps, GoogleBook, Book } from '../types';
+import HapticFeedback from '../utils/haptics';
 
 const BookCard: React.FC<BookCardProps> = ({
   book,
@@ -34,7 +35,23 @@ const BookCard: React.FC<BookCardProps> = ({
       // Handle both data structures:
       // 1. Standard Google Books API format: book.imageLinks?.thumbnail
       // 2. Backend processed format: book.thumbnail
-      return book.imageLinks?.thumbnail || (book as any).thumbnail || null;
+      let imageUrl = book.imageLinks?.thumbnail || (book as any).thumbnail || null;
+      
+      // Debug logging to see what URLs we're getting
+      if (imageUrl) {
+        console.log('BookCard - Image URL found:', imageUrl);
+      } else {
+        console.log('BookCard - No image URL found for book:', book.title);
+        console.log('BookCard - Book data:', JSON.stringify(book, null, 2));
+      }
+      
+      // Convert HTTP to HTTPS for security and compatibility
+      if (imageUrl && imageUrl.startsWith('http://')) {
+        imageUrl = imageUrl.replace('http://', 'https://');
+        console.log('BookCard - Converted to HTTPS:', imageUrl);
+      }
+      
+      return imageUrl;
     }
     return null;
   };
@@ -102,8 +119,16 @@ const BookCard: React.FC<BookCardProps> = ({
   const description = getBookDescription();
   const owner = getBookOwner();
 
+  const handleCardPress = () => {
+    if (onPress) {
+      // Add haptic feedback specifically for book card interactions
+      HapticFeedback.card();
+      onPress();
+    }
+  };
+
   return (
-    <Card onPress={onPress} padding={0}>
+    <Card onPress={handleCardPress} padding={0}>
       <View style={styles.container}>
         <View style={styles.imageContainer}>
           {getBookImage() && !imageError ? (

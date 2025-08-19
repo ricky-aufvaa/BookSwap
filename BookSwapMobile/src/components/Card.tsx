@@ -39,15 +39,12 @@ const Card: React.FC<CardProps> = ({
 
   const handlePress = () => {
     if (onPress) {
-      // Trigger light haptic feedback for card interactions
-      HapticFeedback.card();
       onPress();
     }
   };
 
   const handlePressIn = () => {
-    // Very subtle haptic feedback on press start
-    HapticFeedback.selection();
+    // No haptic feedback here to avoid triggering on empty spaces
   };
 
   if (onPress) {
