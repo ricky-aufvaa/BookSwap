@@ -27,7 +27,21 @@ const BookCard: React.FC<BookCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const isGoogleBook = (book: GoogleBook | Book): book is GoogleBook => {
-    return 'authors' in book || 'imageLinks' in book;
+    const hasAuthors = 'authors' in book;
+    const hasImageLinks = 'imageLinks' in book;
+    const hasThumbnail = 'thumbnail' in book;
+    const result = hasAuthors || hasImageLinks || hasThumbnail;
+    
+    // Debug the type detection
+    console.log(`BookCard - isGoogleBook for "${book.title}":`, {
+      hasAuthors,
+      hasImageLinks,
+      hasThumbnail,
+      result,
+      bookKeys: Object.keys(book)
+    });
+    
+    return result;
   };
 
   const getBookImage = () => {
@@ -36,6 +50,11 @@ const BookCard: React.FC<BookCardProps> = ({
       // 1. Standard Google Books API format: book.imageLinks?.thumbnail
       // 2. Backend processed format: book.thumbnail (this is what we're actually getting)
       let imageUrl = (book as any).thumbnail || book.imageLinks?.thumbnail || null;
+      
+      // Temporary visible debugging - remove after fixing
+      if (book.title.toLowerCase().includes('1984') || book.title.toLowerCase().includes('pleiadian')) {
+        alert(`DEBUG: Book "${book.title}" - thumbnail: ${(book as any).thumbnail}, imageLinks: ${JSON.stringify(book.imageLinks)}`);
+      }
       
       // Debug logging to see what URLs we're getting
       console.log('BookCard - Checking for image URL...');

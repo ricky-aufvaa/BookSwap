@@ -37,23 +37,23 @@ async def search_google_books(query: str, max_results: int = 10):
                     relevance_score += (avg_rating / 5.0) * min(ratings_count / 100, 5)
                 
                 # Publication recency factor (0-2 points for books published in last 100 years)
-                pub_date = vol.get("publishedDate", "")
-                if pub_date:
-                    try:
-                        year = int(pub_date.split("-")[0])
-                        current_year = 2024
-                        if year >= current_year - 100:
-                            relevance_score += 2 * (1 - (current_year - year) / 100)
-                    except:
-                        pass
+                # pub_date = vol.get("publishedDate", "")
+                # if pub_date:
+                #     try:
+                #         year = int(pub_date.split("-")[0])
+                #         current_year = 2024
+                #         if year >= current_year - 100:
+                #             relevance_score += 2 * (1 - (current_year - year) / 100)
+                #     except:
+                #         pass
                 
                 # Page count factor (0-1 points, prefer substantial books)
-                page_count = vol.get("pageCount", 0)
-                if page_count:
-                    if 100 <= page_count <= 800:  # Sweet spot for most books
-                        relevance_score += 1
-                    elif page_count > 50:
-                        relevance_score += 0.5
+                # page_count = vol.get("pageCount", 0)
+                # if page_count:
+                #     if 100 <= page_count <= 800:  # Sweet spot for most books
+                #         relevance_score += 1
+                #     elif page_count > 50:
+                #         relevance_score += 0.5
                 
                 # Availability factor (0-1 points)
                 if sale_info.get("saleability") in ["FOR_SALE", "FREE"]:
@@ -61,11 +61,11 @@ async def search_google_books(query: str, max_results: int = 10):
                 
                 # Has description factor (0-0.5 points)
                 if vol.get("description"):
-                    relevance_score += 0.5
+                    relevance_score += 2
                 
                 # Has thumbnail factor (0-0.5 points)
                 if vol.get("imageLinks", {}).get("thumbnail"):
-                    relevance_score += 0.5
+                    relevance_score += 2
 
                 # Extract thumbnail URL with debugging
                 thumbnail_url = vol.get("imageLinks", {}).get("thumbnail", "")
