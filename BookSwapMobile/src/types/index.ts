@@ -49,6 +49,13 @@ export interface GoogleBook {
     thumbnail?: string;
     smallThumbnail?: string;
   };
+  // Backend processed format (from google_books.py)
+  thumbnail?: string;
+  author?: string; // Backend sends single author string
+  publisher?: string;
+  published_date?: string;
+  isbn?: string;
+  // Original Google Books API format
   publishedDate?: string;
   pageCount?: number;
   categories?: string[];

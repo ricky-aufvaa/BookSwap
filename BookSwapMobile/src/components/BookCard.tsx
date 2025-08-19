@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ViewStyle,
   TextStyle,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
@@ -21,13 +22,19 @@ const BookCard: React.FC<BookCardProps> = ({
   showOwner = false,
   showAvailability = false,
 }) => {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
   const isGoogleBook = (book: GoogleBook | Book): book is GoogleBook => {
     return 'authors' in book || 'imageLinks' in book;
   };
 
   const getBookImage = () => {
-    if (isGoogleBook(book) && book.imageLinks?.thumbnail) {
-      return book.imageLinks.thumbnail;
+    if (isGoogleBook(book)) {
+      // Handle both data structures:
+      // 1. Standard Google Books API format: book.imageLinks?.thumbnail
+      // 2. Backend processed format: book.thumbnail
+      return book.imageLinks?.thumbnail || (book as any).thumbnail || null;
     }
     return null;
   };
@@ -38,7 +45,10 @@ const BookCard: React.FC<BookCardProps> = ({
 
   const getBookAuthor = () => {
     if (isGoogleBook(book)) {
-      return book.authors?.join(', ') || 'Unknown Author';
+      // Handle both data structures:
+      // 1. Standard Google Books API format: book.authors (array)
+      // 2. Backend processed format: book.author (string)
+      return book.authors?.join(', ') || (book as any).author || 'Unknown Author';
     }
     return book.author || 'Unknown Author';
   };
@@ -88,12 +98,25 @@ const BookCard: React.FC<BookCardProps> = ({
     <Card onPress={onPress} padding={0}>
       <View style={styles.container}>
         <View style={styles.imageContainer}>
-          {getBookImage() ? (
-            <Image
-              source={{ uri: getBookImage()! }}
-              style={styles.bookImage}
-              resizeMode="cover"
-            />
+          {getBookImage() && !imageError ? (
+            <View style={styles.imageWrapper}>
+              <Image
+                source={{ uri: getBookImage()! }}
+                style={styles.bookImage}
+                resizeMode="cover"
+                onLoadStart={() => setImageLoading(true)}
+                onLoadEnd={() => setImageLoading(false)}
+                onError={() => {
+                  setImageError(true);
+                  setImageLoading(false);
+                }}
+              />
+              {imageLoading && (
+                <View style={styles.imageLoadingOverlay}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              )}
+            </View>
           ) : (
             <View style={styles.placeholderImage}>
               <Ionicons
@@ -196,10 +219,24 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginRight: spacing.md,
   },
+  imageWrapper: {
+    position: 'relative',
+  },
   bookImage: {
     width: 80,
     height: 120,
     borderRadius: spacing.borderRadius.md,
+  },
+  imageLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: spacing.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   placeholderImage: {
     width: 80,
