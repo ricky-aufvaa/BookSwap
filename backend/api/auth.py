@@ -42,7 +42,14 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
     db.add(token_record)
     await db.commit()
     
-    return {**db_user.__dict__, "access_token": token, "token_type": "bearer"}
+    return {
+        "id": str(db_user.id),
+        "username": db_user.username,
+        "city": db_user.city,
+        "created_at": db_user.created_at.isoformat(),
+        "access_token": token,
+        "token_type": "bearer"
+    }
 
 @router.post("/login")
 async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
@@ -62,7 +69,7 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
     db.add(token_record)
     await db.commit()
     
-    return {"access_token": token, "token_type": "bearer", "user": {"id": str(db_user.id), "username": db_user.username, "city": db_user.city}}
+    return {"access_token": token, "token_type": "bearer", "user": {"id": str(db_user.id), "username": db_user.username, "city": db_user.city, "created_at": db_user.created_at.isoformat()}}
 
 @router.get("/validate")
 async def validate_token(current_user: User = Depends(get_current_user)):

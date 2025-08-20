@@ -2,7 +2,6 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserCreate, UserLogin, AuthResponse, Book, BookCreate, GoogleBook, ChatRoom, ChatRoomCreate, ChatMessage, ChatMessageCreate } from '../types';
 import { API_CONFIG } from '../config';
-import { getNetworkConfig, NetworkConfig } from '../utils/networkUtils';
 
 const STORAGE_KEYS = {
   TOKEN: 'auth_token',
@@ -56,14 +55,14 @@ class ApiService {
   async signup(userData: UserCreate): Promise<AuthResponse> {
     try {
       const response: AxiosResponse<any> = await this.api.post('/signup', userData);
-      const { access_token, username, city } = response.data;
+      const { access_token, id, username, city, created_at } = response.data;
       
       // Store token and user data
       if (access_token) {
         await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, access_token);
       }
       
-      const user = { username, city };
+      const user = { id, username, city, created_at };
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       
       return { access_token, user, token_type: 'bearer' };
@@ -87,11 +86,12 @@ class ApiService {
       }
       
       if (user) {
-        // Add an ID to the user object if it's missing
+        // Store complete user data including created_at
         const userWithId = { 
           id: user.id || 'temp-id', 
           username: user.username, 
-          city: user.city 
+          city: user.city,
+          created_at: user.created_at
         };
         await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userWithId));
         console.log('ApiService: User data stored:', userWithId);
@@ -235,20 +235,16 @@ class ApiService {
     await AsyncStorage.multiRemove([STORAGE_KEYS.TOKEN, STORAGE_KEYS.USER]);
   }
 
-  // Network configuration methods
-  async reconfigureNetwork(): Promise<boolean> {
+  // Network configuration methods (removed automatic reconfiguration)
+  // The app now uses a consistent deployed backend URL
+  async testConnection(): Promise<boolean> {
     try {
-      console.log('🔄 Reconfiguring network connection...');
-      const networkConfig = await getNetworkConfig();
-      
-      // Update axios instance with new configuration
-      this.api.defaults.baseURL = networkConfig.baseURL;
-      this.api.defaults.timeout = networkConfig.timeout;
-      
-      console.log('✅ Network reconfigured:', networkConfig);
+      console.log('🔄 Testing backend connection...');
+      const response = await this.api.get('/validate');
+      console.log('✅ Backend connection successful');
       return true;
     } catch (error) {
-      console.error('❌ Failed to reconfigure network:', error);
+      console.error('❌ Backend connection failed:', error);
       return false;
     }
   }

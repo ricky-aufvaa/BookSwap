@@ -51,15 +51,10 @@ const BookCard: React.FC<BookCardProps> = ({
       // 2. Backend processed format: book.thumbnail (this is what we're actually getting)
       let imageUrl = (book as any).thumbnail || book.imageLinks?.thumbnail || null;
       
-      // Temporary visible debugging - remove after fixing
-      if (book.title.toLowerCase().includes('1984') || book.title.toLowerCase().includes('pleiadian')) {
-        alert(`DEBUG: Book "${book.title}" - thumbnail: ${(book as any).thumbnail}, imageLinks: ${JSON.stringify(book.imageLinks)}`);
-      }
-      
+     
       // Debug logging to see what URLs we're getting
       console.log('BookCard - Checking for image URL...');
       console.log('BookCard - book.thumbnail:', (book as any).thumbnail);
-      console.log('BookCard - book.imageLinks?.thumbnail:', book.imageLinks?.thumbnail);
       
       if (imageUrl) {
         console.log('BookCard - Image URL found:', imageUrl);

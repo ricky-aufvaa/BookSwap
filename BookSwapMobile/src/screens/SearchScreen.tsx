@@ -93,9 +93,17 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
         [
           { text: 'OK' },
           {
-            text: 'Add to Wishlist',
+            // text: 'Add to Wishlist',
+            text: 'Add to your collection',
             onPress: () => {
-              Alert.alert('Feature Coming Soon', 'Wishlist feature will be available soon!');
+              
+            const newBook =  apiService.addBook({
+              title: book.title.trim(),
+              author: book.author.trim(),
+      });
+
+      console.log('Book added successfully:', newBook);
+              Alert.alert(`${book.title} by ${book.author}`, `added successfully to your library!`);
             },
           },
         ]

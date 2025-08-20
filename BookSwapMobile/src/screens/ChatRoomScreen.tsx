@@ -20,6 +20,7 @@ import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
 import { RootStackParamList, ChatMessage, ChatRoom } from '../types';
 import { apiService } from '../services/api';
+import { formatMessageTime } from '../utils/dateUtils';
 
 type ChatRoomScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatRoom'>;
 type ChatRoomScreenRouteProp = RouteProp<RootStackParamList, 'ChatRoom'>;
@@ -95,10 +96,6 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  const formatMessageTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
 
   const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
     const isMyMessage = item.sender_username !== otherUserName;

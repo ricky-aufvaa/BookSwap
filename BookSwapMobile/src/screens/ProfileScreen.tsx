@@ -20,6 +20,7 @@ import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
 import { TabParamList, User } from '../types';
 import { apiService } from '../services/api';
+import { formatMemberSince } from '../utils/dateUtils';
 
 type ProfileScreenNavigationProp = BottomTabNavigationProp<TabParamList, 'Profile'>;
 type ProfileScreenRouteProp = RouteProp<TabParamList, 'Profile'>;
@@ -81,14 +82,6 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
 
   if (loading) {
     return (
@@ -154,7 +147,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                   <Text style={styles.location}>{user?.city}</Text>
                 </View>
                 <Text style={styles.joinDate}>
-                  Member since {user?.created_at ? formatDate(user.created_at) : 'Unknown'}
+                  Member since {user?.created_at ? formatMemberSince(user.created_at) : 'Unknown'}
                 </Text>
               </View>
             </View>
