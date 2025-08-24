@@ -142,6 +142,9 @@ export interface BookCardProps {
   onPress?: () => void;
   showOwner?: boolean;
   showAvailability?: boolean;
+  showActions?: boolean;
+  onEdit?: (book: Book) => void;
+  onDelete?: (book: Book) => void;
 }
 
 export interface UserCardProps {

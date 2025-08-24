@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,54 @@ import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
 import { TabParamList, Book, AddBookForm } from '../types';
 import { apiService } from '../services/api';
+
+// Separate memoized component for the edit book form
+const EditBookFormComponent = React.memo<{
+  book: Book;
+  onSubmit: (title: string, author: string) => void;
+  loading: boolean;
+}>(({ book, onSubmit, loading }) => {
+  const [bookTitle, setBookTitle] = useState(book.title);
+  const [bookAuthor, setBookAuthor] = useState(book.author || '');
+
+  const handleSubmit = () => {
+    onSubmit(bookTitle.trim(), bookAuthor.trim());
+  };
+
+  return (
+    <View style={styles.formContainer}>
+      <Input
+        id="edit-book-title"
+        name="title"
+        placeholder="Enter the book title"
+        value={bookTitle}
+        onChangeText={setBookTitle}
+        leftIcon="book-outline"
+        autoCapitalize="none"
+        autoComplete="off"
+      />
+
+      <Input
+        id="edit-book-author"
+        name="author"
+        placeholder="Enter the author's name"
+        value={bookAuthor}
+        onChangeText={setBookAuthor}
+        leftIcon="person-outline"
+        autoCapitalize="words"
+        autoComplete="name"
+      />
+
+      <Button
+        title="Update Book"
+        onPress={handleSubmit}
+        loading={loading}
+        fullWidth
+        icon="checkmark-outline"
+      />
+    </View>
+  );
+});
 
 // Separate memoized component for the add book form
 const AddBookFormComponent = React.memo<{
@@ -95,6 +143,10 @@ const MyBooksScreen: React.FC<Props> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addingBook, setAddingBook] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [updatingBook, setUpdatingBook] = useState(false);
+  const [deletingBookId, setDeletingBookId] = useState<string | null>(null);
 
   useEffect(() => {
     loadBooks();
@@ -153,19 +205,100 @@ const MyBooksScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const renderBookItem = ({ item, index }: { item: Book; index: number }) => (
-    <Animatable.View
-      animation="fadeInUp"
-      duration={layout.animation.normal}
-      delay={index * 50}
-    >
-      <BookCard
-        book={item}
-        showOwner={false}
-        showAvailability={false}
-      />
-    </Animatable.View>
-  );
+  const handleEditBook = (book: Book) => {
+    setEditingBook(book);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateBook = async (title: string, author: string) => {
+    if (!editingBook || !title.trim() || !author.trim()) {
+      Alert.alert('Error', 'Please fill in both title and author fields');
+      return;
+    }
+
+    setUpdatingBook(true);
+    try {
+      const updatedBook = await apiService.updateBook(editingBook.id, {
+        title: title.trim(),
+        author: author.trim(),
+      });
+
+      setBooks(prev => prev.map(book => 
+        book.id === editingBook.id ? updatedBook : book
+      ));
+      setShowEditModal(false);
+      setEditingBook(null);
+      
+      Alert.alert('Success', 'Book updated successfully!');
+    } catch (error: any) {
+      console.error('Error updating book:', error);
+      Alert.alert('Error', error.message || 'Failed to update book');
+    } finally {
+      setUpdatingBook(false);
+    }
+  };
+
+  const handleDeleteBook = (book: Book) => {
+    Alert.alert(
+      'Delete Book',
+      `Are you sure you want to delete "${book.title}" from your library?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => confirmDeleteBook(book),
+        },
+      ]
+    );
+  };
+
+  const confirmDeleteBook = async (book: Book) => {
+    setDeletingBookId(book.id);
+    try {
+      await apiService.deleteBook(book.id);
+      
+      // Animate the book removal
+      setBooks(prev => prev.filter(b => b.id !== book.id));
+      
+      Alert.alert('Success', 'Book deleted from your library');
+    } catch (error: any) {
+      console.error('Error deleting book:', error);
+      Alert.alert('Error', error.message || 'Failed to delete book');
+    } finally {
+      setDeletingBookId(null);
+    }
+  };
+
+  const renderBookItem = ({ item, index }: { item: Book; index: number }) => {
+    const isDeleting = deletingBookId === item.id;
+    
+    // Debug logging
+    console.log('MyBooksScreen - Rendering book item:', {
+      title: item.title,
+      showActions: true,
+      hasOnEdit: !!handleEditBook,
+      hasOnDelete: !!handleDeleteBook,
+      bookKeys: Object.keys(item)
+    });
+    
+    return (
+      <Animatable.View
+        animation={isDeleting ? "fadeOutRight" : "fadeInUp"}
+        duration={isDeleting ? layout.animation.fast : layout.animation.normal}
+        delay={isDeleting ? 0 : index * 50}
+      >
+        <BookCard
+          book={item}
+          showOwner={false}
+          showAvailability={false}
+          showActions={true}
+          onEdit={handleEditBook}
+          onDelete={handleDeleteBook}
+        />
+      </Animatable.View>
+    );
+  };
 
   const renderEmptyState = () => (
     <Animatable.View
@@ -230,6 +363,55 @@ const MyBooksScreen: React.FC<Props> = ({ navigation }) => {
     </Modal>
   );
 
+  const renderEditBookModal = () => (
+    <Modal
+      visible={showEditModal}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={() => {
+        setShowEditModal(false);
+        setEditingBook(null);
+      }}
+    >
+      <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Button
+            title="Cancel"
+            onPress={() => {
+              setShowEditModal(false);
+              setEditingBook(null);
+            }}
+            variant="primary"
+            size="small"
+          />
+          <Text style={styles.modalTitle}>Edit Book</Text>
+          <View style={styles.modalHeaderSpacer} />
+        </View>
+
+        <View style={styles.modalContent}>
+          <Animatable.View
+            animation="fadeInUp"
+            duration={layout.animation.normal}
+          >
+            <Card>
+              {editingBook && (
+                <EditBookFormComponent
+                  book={editingBook}
+                  onSubmit={handleUpdateBook}
+                  loading={updatingBook}
+                />
+              )}
+            </Card>
+          </Animatable.View>
+
+          <Text style={styles.modalHint}>
+            Update the title and author information for this book
+          </Text>
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -287,6 +469,7 @@ const MyBooksScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       {renderAddBookModal()}
+      {renderEditBookModal()}
     </SafeAreaView>
   );
 };

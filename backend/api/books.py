@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 
 from models.book import Book
 from models.user import User
-from schemas.book import BookOut, BookCreate
+from schemas.book import BookOut, BookCreate, BookUpdate
 from schemas.user import UserOut
 from config.database import get_db
 from utils.auth_utils import get_current_user
@@ -148,3 +148,95 @@ async def search_book_owners(
         )
 
     return owners
+
+@router.put("/{book_id}", response_model=BookOut)
+async def update_book(
+    book_id: str,
+    book_update: BookUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update a book owned by the current user
+    """
+    try:
+        # Find the book and verify ownership
+        result = await db.execute(
+            select(Book).where(
+                Book.id == book_id,
+                Book.owner_id == current_user.id
+            )
+        )
+        book = result.scalar_one_or_none()
+        
+        if not book:
+            raise HTTPException(
+                status_code=404,
+                detail="Book not found or you don't have permission to edit it"
+            )
+        
+        # Update fields if provided
+        update_data = book_update.dict(exclude_unset=True)
+        
+        # If title is being updated, try to fetch new thumbnail
+        if 'title' in update_data:
+            try:
+                google_books = await search_google_books(update_data['title'], max_results=1)
+                if google_books and len(google_books) > 0:
+                    thumbnail_url = google_books[0].get("thumbnail")
+                    if thumbnail_url:
+                        update_data['thumbnail'] = thumbnail_url
+                        print(f"Updated thumbnail for book '{update_data['title']}': {thumbnail_url}")
+            except Exception as e:
+                print(f"Failed to fetch thumbnail for updated book '{update_data['title']}': {str(e)}")
+        
+        # Apply updates
+        for field, value in update_data.items():
+            setattr(book, field, value)
+        
+        await db.commit()
+        await db.refresh(book)
+        
+        print(f"Updated book {book_id} for user {current_user.username}")
+        return book
+        
+    except Exception as e:
+        print(f"Error updating book {book_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update book: {str(e)}")
+
+@router.delete("/{book_id}")
+async def delete_book(
+    book_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a book owned by the current user
+    """
+    try:
+        # Find the book and verify ownership
+        result = await db.execute(
+            select(Book).where(
+                Book.id == book_id,
+                Book.owner_id == current_user.id
+            )
+        )
+        book = result.scalar_one_or_none()
+        
+        if not book:
+            raise HTTPException(
+                status_code=404,
+                detail="Book not found or you don't have permission to delete it"
+            )
+        
+        book_title = book.title
+        # Use the session to delete the book
+        await db.delete(book)
+        await db.commit()
+        
+        print(f"Deleted book '{book_title}' (ID: {book_id}) for user {current_user.username}")
+        return {"message": f"Book '{book_title}' deleted successfully"}
+        
+    except Exception as e:
+        print(f"Error deleting book {book_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete book: {str(e)}")

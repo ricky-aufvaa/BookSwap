@@ -7,6 +7,7 @@ import {
   ViewStyle,
   TextStyle,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
@@ -22,21 +23,34 @@ const BookCard: React.FC<BookCardProps> = ({
   onPress,
   showOwner = false,
   showAvailability = false,
+  showActions = false,
+  onEdit,
+  onDelete,
 }) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
   const isGoogleBook = (book: GoogleBook | Book): book is GoogleBook => {
-    const hasAuthors = 'author' in book;
+    // A GoogleBook has specific properties that a regular Book doesn't have
     const hasImageLinks = 'imageLinks' in book;
-    const hasThumbnail = 'thumbnail' in book;
-    const result = hasAuthors || hasImageLinks || hasThumbnail;
+    const hasAuthors = 'authors' in book; // GoogleBook has 'authors' array, Book has 'author' string
+    const hasDescription = 'description' in book;
+    const hasPublisher = 'publisher' in book;
+    const hasAvailabilityInfo = 'available_in_city' in book;
+    
+    // If it has owner_id, it's definitely a regular Book from our database
+    const hasOwnerId = 'owner_id' in book;
+    
+    const result = !hasOwnerId && (hasImageLinks || hasAuthors || hasDescription || hasPublisher || hasAvailabilityInfo);
     
     // Debug the type detection
     console.log(`BookCard - isGoogleBook for "${book.title}":`, {
-      hasAuthors,
       hasImageLinks,
-      hasThumbnail,
+      hasAuthors,
+      hasDescription,
+      hasPublisher,
+      hasAvailabilityInfo,
+      hasOwnerId,
       result,
       bookKeys: Object.keys(book)
     });
@@ -239,36 +253,83 @@ const BookCard: React.FC<BookCardProps> = ({
           )}
 
           <View style={styles.footerContainer}>
-            {owner && showOwner && (
-              <View style={styles.ownerContainer}>
-                <Ionicons
-                  name="person-outline"
-                  size={14}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.ownerText}>
-                  {owner}
-                </Text>
-              </View>
-            )}
+            <View style={styles.leftFooterSection}>
+              {owner && showOwner && (
+                <View style={styles.ownerContainer}>
+                  <Ionicons
+                    name="person-outline"
+                    size={14}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={styles.ownerText}>
+                    {owner}
+                  </Text>
+                </View>
+              )}
 
-            {availabilityInfo && (
-              <View style={styles.availabilityContainer}>
-                {availabilityInfo.available ? (
-                  <View style={styles.availableTag}>
-                    <Text style={styles.availableText}>
-                      Available ({availabilityInfo.ownersCount})
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.unavailableTag}>
-                    <Text style={styles.unavailableText}>
-                      Not available locally
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
+              {availabilityInfo && (
+                <View style={styles.availabilityContainer}>
+                  {availabilityInfo.available ? (
+                    <View style={styles.availableTag}>
+                      <Text style={styles.availableText}>
+                        Available ({availabilityInfo.ownersCount})
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.unavailableTag}>
+                      <Text style={styles.unavailableText}>
+                        Not available locally
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {(() => {
+              const shouldShowActions = showActions && !isGoogleBook(book) && onEdit && onDelete;
+              console.log(`BookCard - Action buttons for "${book.title}":`, {
+                showActions,
+                isGoogleBook: isGoogleBook(book),
+                hasOnEdit: !!onEdit,
+                hasOnDelete: !!onDelete,
+                shouldShowActions
+              });
+              
+              return shouldShowActions ? (
+                <View style={styles.actionsContainer}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => {
+                      console.log('BookCard - Edit button pressed for:', book.title);
+                      HapticFeedback.card();
+                      onEdit(book as Book);
+                    }}
+                  >
+                    <Ionicons
+                      name="pencil-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.deleteButton]}
+                    onPress={() => {
+                      console.log('BookCard - Delete button pressed for:', book.title);
+                      HapticFeedback.card();
+                      onDelete(book as Book);
+                    }}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={16}
+                      color={colors.error}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ) : null;
+            })()}
           </View>
         </View>
       </View>
@@ -411,6 +472,31 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     fontWeight: '500',
   } as TextStyle,
+  leftFooterSection: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: spacing.borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  deleteButton: {
+    backgroundColor: colors.errorLight || colors.backgroundSecondary,
+    borderColor: colors.error,
+  },
 });
 
 export default BookCard;

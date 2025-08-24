@@ -150,6 +150,23 @@ class ApiService {
     }
   }
 
+  async updateBook(bookId: string, bookData: Partial<BookCreate>): Promise<Book> {
+    try {
+      const response: AxiosResponse<Book> = await this.api.put(`/books/${bookId}`, bookData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to update book');
+    }
+  }
+
+  async deleteBook(bookId: string): Promise<void> {
+    try {
+      await this.api.delete(`/books/${bookId}`);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to delete book');
+    }
+  }
+
   async searchBooks(query: string): Promise<GoogleBook[]> {
     try {
       const response: AxiosResponse<GoogleBook[]> = await this.api.get('/books/search', {
