@@ -32,6 +32,9 @@ async def get_my_books(db: AsyncSession = Depends(get_db), current_user: User = 
         print(f"Getting books for user: {current_user.username} (ID: {current_user.id})")
         result = await db.execute(select(Book).where(Book.owner_id == current_user.id))
         books = result.scalars().all()
+        #update 24 august
+        for book in books:
+            search_books(book)
         print(f"Found {len(books)} books for user {current_user.username}")
         return books
     except Exception as e:
