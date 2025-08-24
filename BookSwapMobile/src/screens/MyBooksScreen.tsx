@@ -55,7 +55,7 @@ const AddBookFormComponent = React.memo<{
         value={bookTitle}
         onChangeText={setBookTitle}
         leftIcon="book-outline"
-        autoCapitalize="words"
+        autoCapitalize="none"
         autoComplete="off"
       />
 

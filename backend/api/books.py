@@ -33,6 +33,7 @@ async def get_my_books(db: AsyncSession = Depends(get_db), current_user: User = 
         result = await db.execute(select(Book).where(Book.owner_id == current_user.id))
         books = result.scalars().all()
         #update 24 august
+        print(books)
         for book in books:
             search_books(book)
         print(f"Found {len(books)} books for user {current_user.username}")
