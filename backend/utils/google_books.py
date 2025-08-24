@@ -70,7 +70,7 @@ async def search_google_books(query: str, max_results: int = 10):
                     relevance_score += 1
 
                 # Extract thumbnail URL with debugging
-                thumbnail_url = vol.get("imageLinks", {}).get("thumbnail", "")
+                thumbnail_url = vol.get("imageLinks", {}).get("smallThumbnail", "")
                 print(f"DEBUG - Book: {vol.get('title', 'Unknown')}")
                 print(f"DEBUG - ImageLinks: {vol.get('imageLinks', {})}")
                 print(f"DEBUG - Thumbnail URL: {thumbnail_url}")

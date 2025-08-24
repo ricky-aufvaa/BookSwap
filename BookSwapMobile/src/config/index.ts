@@ -1,7 +1,8 @@
 // API Configuration for BookSwap Mobile App
 import { Platform } from 'react-native';
 
-const DEPLOYED_URL = "https://bookswap-yb6p.onrender.com"; // Production backend
+// const DEPLOYED_URL = "https://bookswap-yb6p.onrender.com"; // Production backend
+const DEPLOYED_URL = "http://127.0.0.1:8000"; // Production backend
 
 const config = {
   development: {
@@ -35,7 +36,9 @@ export default {
   DEPLOYED_URL, // Export for use in other modules
   
   // Helper to get the base URL without /api/v1
-  getBaseURL: () => DEPLOYED_URL,
+  // getBaseURL: () => DEPLOYED_URL,
+  getBaseURL: () => "http://127.0.0.1:8000",
+
   
   // Helper to update API URL at runtime (for debugging purposes)
   updateAPI: (newURL: string) => {

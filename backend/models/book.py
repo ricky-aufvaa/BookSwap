@@ -15,6 +15,7 @@ class Book(Base):
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     owner_username = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    thumbnail = Column(String, nullable=True)  # Fixed: proper SQLAlchemy column definition
     
     # Relationships
     owner = relationship("User", back_populates="books")

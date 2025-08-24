@@ -27,7 +27,7 @@ const BookCard: React.FC<BookCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const isGoogleBook = (book: GoogleBook | Book): book is GoogleBook => {
-    const hasAuthors = 'authors' in book;
+    const hasAuthors = 'author' in book;
     const hasImageLinks = 'imageLinks' in book;
     const hasThumbnail = 'thumbnail' in book;
     const result = hasAuthors || hasImageLinks || hasThumbnail;
@@ -45,33 +45,40 @@ const BookCard: React.FC<BookCardProps> = ({
   };
 
   const getBookImage = () => {
+    let imageUrl = null;
+    
     if (isGoogleBook(book)) {
       // Handle both data structures:
-      // 1. Standard Google Books API format: book.imageLinks?.thumbnail
+      // 1. Standard Google Books API format: book.imageLinks?.thumbnail or book.imageLinks?.smallThumbnail
       // 2. Backend processed format: book.thumbnail (this is what we're actually getting)
-      let imageUrl = (book as any).thumbnail || book.imageLinks?.thumbnail || null;
-      
-     
-      // Debug logging to see what URLs we're getting
-      console.log('BookCard - Checking for image URL...');
-      console.log('BookCard - book.thumbnail:', (book as any).thumbnail);
-      
-      if (imageUrl) {
-        console.log('BookCard - Image URL found:', imageUrl);
-      } else {
-        console.log('BookCard - No image URL found for book:', book.title);
-        console.log('BookCard - Book data keys:', Object.keys(book));
-      }
+      imageUrl = (book as any).thumbnail || 
+                 book.imageLinks?.smallThumbnail || 
+                 book.imageLinks?.thumbnail || 
+                 null;
+    } else {
+      // For regular Book type, use the thumbnail field directly
+      imageUrl = book.thumbnail || null;
+    }
+    
+    // Debug logging to see what URLs we're getting
+    console.log('BookCard - Checking for image URL...');
+    console.log('BookCard - Book type:', isGoogleBook(book) ? 'GoogleBook' : 'Book');
+    console.log('BookCard - book.thumbnail:', (book as any).thumbnail);
+    
+    if (imageUrl) {
+      console.log('BookCard - Image URL found:', imageUrl);
       
       // Convert HTTP to HTTPS for security and compatibility
-      if (imageUrl && imageUrl.startsWith('http://')) {
+      if (imageUrl.startsWith('http://')) {
         imageUrl = imageUrl.replace('http://', 'https://');
         console.log('BookCard - Converted to HTTPS:', imageUrl);
       }
-      
-      return imageUrl;
+    } else {
+      console.log('BookCard - No image URL found for book:', book.title);
+      console.log('BookCard - Book data keys:', Object.keys(book));
     }
-    return null;
+    
+    return imageUrl;
   };
 
   const getBookTitle = () => {

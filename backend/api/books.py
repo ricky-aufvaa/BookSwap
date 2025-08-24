@@ -15,11 +15,22 @@ router = APIRouter(prefix="/books", tags=["books"])
 
 @router.post("/", response_model=BookOut, status_code=201)
 async def add_book(book: BookCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Search for thumbnail from Google Books API
+    thumbnail_url = None
+    try:
+        google_books = await search_google_books(book.title, max_results=1)
+        if google_books and len(google_books) > 0:
+            thumbnail_url = google_books[0].get("thumbnail")
+            print(f"Found thumbnail for '{book.title}': {thumbnail_url}")
+    except Exception as e:
+        print(f"Failed to fetch thumbnail for '{book.title}': {str(e)}")
+    
     db_book = Book(
         title=book.title, 
         author=book.author, 
         owner_id=current_user.id, 
-        owner_username=current_user.username
+        owner_username=current_user.username,
+        thumbnail=thumbnail_url
     )
     db.add(db_book)
     await db.commit()
@@ -32,10 +43,24 @@ async def get_my_books(db: AsyncSession = Depends(get_db), current_user: User = 
         print(f"Getting books for user: {current_user.username} (ID: {current_user.id})")
         result = await db.execute(select(Book).where(Book.owner_id == current_user.id))
         books = result.scalars().all()
-        #update 24 august
-        print(books)
+        
+        # For existing books without thumbnails, fetch and update them
         for book in books:
-            search_books(book)
+            if not book.thumbnail:
+                try:
+                    google_books = await search_google_books(book.title, max_results=1)
+                    if google_books and len(google_books) > 0:
+                        thumbnail_url = google_books[0].get("thumbnail")
+                        if thumbnail_url:
+                            book.thumbnail = thumbnail_url
+                            db.add(book)  # Mark for update
+                            print(f"Updated thumbnail for existing book '{book.title}': {thumbnail_url}")
+                except Exception as e:
+                    print(f"Failed to fetch thumbnail for existing book '{book.title}': {str(e)}")
+        
+        # Commit any thumbnail updates
+        await db.commit()
+        
         print(f"Found {len(books)} books for user {current_user.username}")
         return books
     except Exception as e:

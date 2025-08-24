@@ -34,6 +34,7 @@ export interface Book {
   owner_id: string;
   owner_username: string;
   created_at: string;
+  thumbnail?: string;  // Made optional to handle cases where thumbnail might not be available
 }
 
 export interface BookCreate {

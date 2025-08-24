@@ -17,7 +17,7 @@ class BookOut(BookBase):
     owner_id: UUID4
     owner_username: str
     created_at: datetime
-    # thumbnail: str
+    thumbnail: Optional[str] = None  # Fixed: uncommented and made optional
 
     class Config:
         orm_mode = True
