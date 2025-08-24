@@ -33,6 +33,7 @@ interface Props {
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [user, setUser] = useState<User | null>(null);
   const [recentBooks, setRecentBooks] = useState<Book[]>([]);
+  const [totalBooks, setTotalBooks] = useState(0)
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -49,6 +50,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
       setUser(userData);
       setRecentBooks(booksData.slice(0, 3)); // Show only recent 3 books
+      setTotalBooks(booksData.length)
     } catch (error: any) {
       Alert.alert('Error', 'Failed to load data');
     } finally {
@@ -131,7 +133,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <Card style={styles.statsCard}>
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{recentBooks.length}</Text>
+                <Text style={styles.statNumber}>{totalBooks}</Text>
                 <Text style={styles.statLabel}>Books Owned</Text>
               </View>
               <View style={styles.statDivider} />

@@ -6,11 +6,12 @@ from config.settings import settings
 async def search_google_books(query: str, max_results: int = 10):
     # Enhanced search parameters for better relevance
     params = {
-        "q": query,
+        "q": f"intitle:{query}",
+
         "key": settings.GOOGLE_BOOKS_API_KEY,
         "maxResults": max_results,
         "orderBy": "relevance",  # Sort by relevance instead of newest
-        "printType": "books",    # Only return actual books, not magazines
+        # "printType": "books",    # Only return actual books, not magazines
         "projection": "full",    # Get full volume info including ratings
         "langRestrict": "en"     # Restrict to English books for better results
     }
