@@ -150,10 +150,6 @@ async def forgot_password(request: ForgotPasswordRequest, db: AsyncSession = Dep
         # Don't reveal if email exists or not for security
         return {"message": "If the email exists in our system, you will receive a password reset code shortly."}
     
-    # Check if email service is configured
-    if not email_service.is_email_configured():
-        raise HTTPException(500, "Email service is not configured. Please contact support.")
-    
     # Generate reset code
     reset_code = email_service.generate_reset_code()
     expires_at = datetime.utcnow() + timedelta(minutes=settings.RESET_CODE_EXPIRE_MINUTES)
@@ -175,17 +171,29 @@ async def forgot_password(request: ForgotPasswordRequest, db: AsyncSession = Dep
     db.add(reset_record)
     await db.commit()
     
-    # Send email
-    email_sent = await email_service.send_reset_code_email(
-        email=user.email,
-        username=user.username,
-        reset_code=reset_code
-    )
-    
-    if not email_sent:
-        raise HTTPException(500, "Failed to send reset email. Please try again later.")
-    
-    return {"message": "If the email exists in our system, you will receive a password reset code shortly."}
+    # Check if email service is configured
+    if email_service.is_email_configured():
+        # Send email in production
+        email_sent = await email_service.send_reset_code_email(
+            email=user.email,
+            username=user.username,
+            reset_code=reset_code
+        )
+        
+        if not email_sent:
+            raise HTTPException(500, "Failed to send reset email. Please try again later.")
+        
+        return {"message": "If the email exists in our system, you will receive a password reset code shortly."}
+    else:
+        # Development mode - return the code in the response (NOT for production!)
+        if settings.ENVIRONMENT == "development":
+            print(f"🔧 DEVELOPMENT MODE: Reset code for {user.email}: {reset_code}")
+            return {
+                "message": "Email service not configured. In development mode, check server logs for the reset code.",
+                "dev_reset_code": reset_code  # Only in development!
+            }
+        else:
+            raise HTTPException(500, "Email service is not configured. Please contact support.")
 
 @router.post("/verify-reset-code")
 async def verify_reset_code(request: VerifyResetCodeRequest, db: AsyncSession = Depends(get_db)):

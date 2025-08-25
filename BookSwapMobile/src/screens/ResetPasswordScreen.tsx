@@ -166,7 +166,7 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
                 title="Verify Code"
                 onPress={handleVerifyCode}
                 loading={verifyingCode}
-                variant="outline"
+                variant="primary"
                 size="small"
                 icon="checkmark-circle-outline"
               />
@@ -214,7 +214,7 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
             <Button
               title="Resend Code"
               onPress={handleResendCode}
-              variant="ghost"
+              variant="primary"
               size="small"
             />
           </View>
@@ -223,7 +223,7 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
             <Button
               title="Back to Login"
               onPress={() => navigation.navigate('Login')}
-              variant="ghost"
+              variant="primary"
               size="small"
             />
           </View>

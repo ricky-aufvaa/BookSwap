@@ -158,7 +158,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <Button
               title="Forgot Password?"
               onPress={() => navigation.navigate('ForgotPassword')}
-              variant="ghost"
+              variant="secondary"
               size="small"
             />
           </View>

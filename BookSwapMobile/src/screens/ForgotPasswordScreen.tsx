@@ -50,9 +50,14 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const response = await apiService.forgotPassword({ email: email.trim() });
       
+      // Check if we're in development mode and got a reset code
+      const isDevelopmentMode = (response as any).dev_reset_code;
+      
       Alert.alert(
         'Reset Code Sent',
-        response.message,
+        isDevelopmentMode 
+          ? `${response.message}\n\nDEVELOPMENT CODE: ${(response as any).dev_reset_code}`
+          : response.message,
         [
           {
             text: 'OK',
@@ -119,7 +124,7 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             <Button
               title="Back to Login"
               onPress={() => navigation.navigate('Login')}
-              variant="ghost"
+              variant="primary"
               size="small"
             />
           </View>

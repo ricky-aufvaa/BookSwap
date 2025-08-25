@@ -20,7 +20,7 @@ class EmailService:
         """Generate a secure 6-digit reset code"""
         return str(secrets.randbelow(900000) + 100000)
     
-    def create_reset_email_content(self, username: str, reset_code: str) -> tuple[str, str]:
+    def create_reset_email_content(self, username: str, reset_code: str) -> tuple[str, str, str]:
         """Create email content for password reset"""
         subject = "BookSwap - Password Reset Code"
         
