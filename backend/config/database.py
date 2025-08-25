@@ -29,4 +29,5 @@ async def create_db_and_tables():
         from models.request import BookRequest
         from models.token import TokenTable
         from models.chat import ChatRoom, ChatMessage
+        from models.password_reset import PasswordReset
         await conn.run_sync(Base.metadata.create_all)

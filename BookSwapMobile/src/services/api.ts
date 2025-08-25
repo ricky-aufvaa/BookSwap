@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, UserCreate, UserLogin, AuthResponse, Book, BookCreate, GoogleBook, ChatRoom, ChatRoomCreate, ChatMessage, ChatMessageCreate } from '../types';
+import { User, UserCreate, UserLogin, AuthResponse, Book, BookCreate, GoogleBook, ChatRoom, ChatRoomCreate, ChatMessage, ChatMessageCreate, ForgotPasswordRequest, ResetPasswordRequest, VerifyResetCodeRequest } from '../types';
 import { API_CONFIG } from '../config';
 
 const STORAGE_KEYS = {
@@ -128,6 +128,34 @@ class ApiService {
     } catch (error) {
       console.error('ApiService: Token validation failed:', error);
       return { valid: false };
+    }
+  }
+
+  // Password Reset methods
+  async forgotPassword(request: ForgotPasswordRequest): Promise<{ message: string }> {
+    try {
+      const response: AxiosResponse<{ message: string }> = await this.api.post('/forgot-password', request);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.response?.data?.message || 'Failed to send reset code');
+    }
+  }
+
+  async verifyResetCode(request: VerifyResetCodeRequest): Promise<{ message: string; valid: boolean }> {
+    try {
+      const response: AxiosResponse<{ message: string; valid: boolean }> = await this.api.post('/verify-reset-code', request);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.response?.data?.message || 'Invalid reset code');
+    }
+  }
+
+  async resetPassword(request: ResetPasswordRequest): Promise<{ message: string }> {
+    try {
+      const response: AxiosResponse<{ message: string }> = await this.api.post('/reset-password', request);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.response?.data?.message || 'Failed to reset password');
     }
   }
 

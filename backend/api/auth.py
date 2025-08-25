@@ -9,21 +9,31 @@ from fastapi.security import HTTPAuthorizationCredentials
 
 from models.user import User
 from models.token import TokenTable
-from schemas.user import UserCreate, UserLogin, UserOut
+from models.password_reset import PasswordReset
+from schemas.user import UserCreate, UserLogin, UserOut, ForgotPasswordRequest, ResetPasswordRequest, VerifyResetCodeRequest
 from config.database import get_db
 from config.settings import settings
 from utils.auth_utils import create_access_token, hash_password, verify_password, get_current_user, oauth2_scheme
+from utils.email_service import email_service
+from datetime import datetime, timedelta
 
 router = APIRouter(tags=["auth"])
 
 @router.post("/signup", response_model=UserOut, status_code=201)
 async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
+    # Check if username already exists
     result = await db.execute(select(User).where(User.username == user.username))
     if result.scalars().first():
         raise HTTPException(400, "Username already taken")
+    
+    # Check if email already exists
+    result = await db.execute(select(User).where(User.email == user.email))
+    if result.scalars().first():
+        raise HTTPException(400, "Email already registered")
 
     db_user = User(
         username=user.username,
+        email=user.email,
         password_hash=hash_password(user.password),
         city=user.city
     )
@@ -45,6 +55,7 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
     return {
         "id": str(db_user.id),
         "username": db_user.username,
+        "email": db_user.email,
         "city": db_user.city,
         "created_at": db_user.created_at.isoformat(),
         "access_token": token,
@@ -125,3 +136,126 @@ async def logout(dependencies: HTTPAuthorizationCredentials = Depends(oauth2_sch
         await db.refresh(existing_token)
     
     return {"message": "Logout Successfully"}
+
+@router.post("/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Send password reset code to user's email
+    """
+    # Find user by email
+    result = await db.execute(select(User).where(User.email == request.email))
+    user = result.scalars().first()
+    
+    if not user:
+        # Don't reveal if email exists or not for security
+        return {"message": "If the email exists in our system, you will receive a password reset code shortly."}
+    
+    # Check if email service is configured
+    if not email_service.is_email_configured():
+        raise HTTPException(500, "Email service is not configured. Please contact support.")
+    
+    # Generate reset code
+    reset_code = email_service.generate_reset_code()
+    expires_at = datetime.utcnow() + timedelta(minutes=settings.RESET_CODE_EXPIRE_MINUTES)
+    
+    # Invalidate any existing reset codes for this user
+    from sqlalchemy import update
+    await db.execute(
+        update(PasswordReset)
+        .where(PasswordReset.user_id == user.id, PasswordReset.is_used == False)
+        .values(is_used=True)
+    )
+    
+    # Create new reset record
+    reset_record = PasswordReset(
+        user_id=user.id,
+        reset_code=reset_code,
+        expires_at=expires_at
+    )
+    db.add(reset_record)
+    await db.commit()
+    
+    # Send email
+    email_sent = await email_service.send_reset_code_email(
+        email=user.email,
+        username=user.username,
+        reset_code=reset_code
+    )
+    
+    if not email_sent:
+        raise HTTPException(500, "Failed to send reset email. Please try again later.")
+    
+    return {"message": "If the email exists in our system, you will receive a password reset code shortly."}
+
+@router.post("/verify-reset-code")
+async def verify_reset_code(request: VerifyResetCodeRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Verify if the reset code is valid (optional endpoint for better UX)
+    """
+    # Find user by email
+    result = await db.execute(select(User).where(User.email == request.email))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(404, "Invalid email or reset code")
+    
+    # Find valid reset code
+    reset_result = await db.execute(
+        select(PasswordReset).where(
+            PasswordReset.user_id == user.id,
+            PasswordReset.reset_code == request.reset_code,
+            PasswordReset.is_used == False
+        )
+    )
+    reset_record = reset_result.scalars().first()
+    
+    if not reset_record or not reset_record.is_valid:
+        raise HTTPException(400, "Invalid or expired reset code")
+    
+    return {"message": "Reset code is valid", "valid": True}
+
+@router.post("/reset-password")
+async def reset_password(request: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Reset user password using the reset code
+    """
+    # Find user by email
+    result = await db.execute(select(User).where(User.email == request.email))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(404, "Invalid email or reset code")
+    
+    # Find valid reset code
+    reset_result = await db.execute(
+        select(PasswordReset).where(
+            PasswordReset.user_id == user.id,
+            PasswordReset.reset_code == request.reset_code,
+            PasswordReset.is_used == False
+        )
+    )
+    reset_record = reset_result.scalars().first()
+    
+    if not reset_record or not reset_record.is_valid:
+        raise HTTPException(400, "Invalid or expired reset code")
+    
+    # Update user password
+    user.password_hash = hash_password(request.new_password)
+    
+    # Mark reset code as used
+    reset_record.is_used = True
+    
+    # Invalidate all existing tokens for this user (force re-login)
+    from sqlalchemy import update
+    await db.execute(
+        update(TokenTable)
+        .where(TokenTable.user_id == user.id)
+        .values(status=False)
+    )
+    
+    # Commit changes
+    db.add(user)
+    db.add(reset_record)
+    await db.commit()
+    
+    return {"message": "Password reset successfully. Please log in with your new password."}

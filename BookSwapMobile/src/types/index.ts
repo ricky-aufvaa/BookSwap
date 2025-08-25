@@ -2,12 +2,14 @@
 export interface User {
   id: string;
   username: string;
+  email: string;
   city: string;
   created_at: string;
 }
 
 export interface UserCreate {
   username: string;
+  email: string;
   password: string;
   city: string;
 }
@@ -76,6 +78,9 @@ export type RootStackParamList = {
   Main: undefined;
   Login: undefined;
   Signup: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { email: string };
+  ResetSuccess: undefined;
   Home: undefined;
   Search: undefined;
   MyBooks: undefined;
@@ -197,9 +202,26 @@ export interface LoginForm {
 
 export interface SignupForm {
   username: string;
+  email: string;
   password: string;
   confirmPassword: string;
   city: string;
+}
+
+// Password Reset types
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  reset_code: string;
+  new_password: string;
+}
+
+export interface VerifyResetCodeRequest {
+  email: string;
+  reset_code: string;
 }
 
 export interface AddBookForm {

@@ -26,6 +26,17 @@ class Settings(BaseSettings):
         "ALLOWED_ORIGINS", 
         "http://localhost:8081,http://localhost:3000,http://127.0.0.1:8081,http://127.0.0.1:3000"
     )
+    
+    # Email Configuration
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    FROM_EMAIL: str = os.getenv("FROM_EMAIL", "")
+    FROM_NAME: str = os.getenv("FROM_NAME", "BookSwap")
+    
+    # Password Reset Configuration
+    RESET_CODE_EXPIRE_MINUTES: int = int(os.getenv("RESET_CODE_EXPIRE_MINUTES", "15"))
 
     class Config:
         env_file = "config/.env.production" if os.getenv("ENVIRONMENT") == "production" else "config/.env"

@@ -24,16 +24,17 @@ import { apiService } from '../services/api';
 
 // Separate memoized component for the signup form
 const SignupFormComponent = React.memo<{
-  onSubmit: (username: string, city: string, password: string, confirmPassword: string) => void;
+  onSubmit: (username: string, email: string, city: string, password: string, confirmPassword: string) => void;
   loading: boolean;
 }>(({ onSubmit, loading }) => {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = () => {
-    onSubmit(username.trim(), city.trim(), password, confirmPassword);
+    onSubmit(username.trim(), email.trim(), city.trim(), password, confirmPassword);
   };
 
   // Reset form when submission is complete (loading becomes false after being true)
@@ -41,6 +42,7 @@ const SignupFormComponent = React.memo<{
   useEffect(() => {
     if (wasLoading && !loading) {
       setUsername('');
+      setEmail('');
       setCity('');
       setPassword('');
       setConfirmPassword('');
@@ -59,6 +61,18 @@ const SignupFormComponent = React.memo<{
         leftIcon="person-outline"
         autoCapitalize="none"
         autoComplete="username"
+      />
+
+      <Input
+        id="signup-email"
+        name="email"
+        placeholder="Enter your email address"
+        value={email}
+        onChangeText={setEmail}
+        leftIcon="mail-outline"
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
       />
 
       <Input
@@ -118,7 +132,7 @@ interface Props {
 const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async (username: string, city: string, password: string, confirmPassword: string) => {
+  const handleSignup = async (username: string, email: string, city: string, password: string, confirmPassword: string) => {
     // Validation
     if (!username.trim()) {
       Alert.alert('Error', 'Username is required');
@@ -126,6 +140,16 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
     }
     if (username.trim().length < 3) {
       Alert.alert('Error', 'Username must be at least 3 characters');
+      return;
+    }
+    if (!email.trim()) {
+      Alert.alert('Error', 'Email is required');
+      return;
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
     if (!city.trim()) {
@@ -154,6 +178,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
       // First create the account
       await apiService.signup({
         username: username.trim(),
+        email: email.trim(),
         password: password,
         city: city.trim(),
       });
