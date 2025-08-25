@@ -24,5 +24,5 @@ class BookOut(BookBase):
     thumbnail: Optional[str] = None  # Fixed: uncommented and made optional
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         json_encoders = {UUID: str}

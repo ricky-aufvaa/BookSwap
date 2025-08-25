@@ -16,7 +16,7 @@ class RequestOut(BaseModel):
     username: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         # json_encoders = {
         #     UUID4: str  # Convert UUID to string in JSON
         # }

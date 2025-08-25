@@ -24,11 +24,11 @@ class UserLogin(BaseModel):
 class UserOut(BaseModel):
     id: UUID4
     username: str
-    email: str
+    email: Optional[str] = None  # Make email optional for existing users
     city: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         json_encoders = {
             UUID: str  # Convert UUID to string in JSON
         }
