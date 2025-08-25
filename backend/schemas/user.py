@@ -33,6 +33,15 @@ class UserOut(BaseModel):
             UUID: str  # Convert UUID to string in JSON
         }
 
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int  # seconds until access token expires
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

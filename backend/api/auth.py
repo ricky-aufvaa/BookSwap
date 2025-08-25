@@ -10,16 +10,16 @@ from fastapi.security import HTTPAuthorizationCredentials
 from models.user import User
 from models.token import TokenTable
 from models.password_reset import PasswordReset
-from schemas.user import UserCreate, UserLogin, UserOut, ForgotPasswordRequest, ResetPasswordRequest, VerifyResetCodeRequest
+from schemas.user import UserCreate, UserLogin, UserOut, ForgotPasswordRequest, ResetPasswordRequest, VerifyResetCodeRequest, TokenResponse, RefreshTokenRequest
 from config.database import get_db
 from config.settings import settings
-from utils.auth_utils import create_access_token, hash_password, verify_password, get_current_user, oauth2_scheme
+from utils.auth_utils import create_access_token, create_refresh_token, hash_password, verify_password, get_current_user, oauth2_scheme, verify_refresh_token
 from utils.email_service import email_service
 from datetime import datetime, timedelta
 
 router = APIRouter(tags=["auth"])
 
-@router.post("/signup", response_model=UserOut, status_code=201)
+@router.post("/signup", response_model=TokenResponse, status_code=201)
 async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
     # Check if username already exists
     result = await db.execute(select(User).where(User.username == user.username))
@@ -41,46 +41,72 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(db_user)
 
-    token = create_access_token(data={"sub": user.username})
+    # Create both access and refresh tokens
+    access_token, access_expires = create_access_token(data={"sub": user.username})
+    refresh_token, refresh_expires = create_refresh_token(data={"sub": user.username})
     
-    # Store token in database
+    # Store tokens in database
     token_record = TokenTable(
         user_id=db_user.id,
-        access_token=token,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        access_token_expires=access_expires,
+        refresh_token_expires=refresh_expires,
         status=True
     )
     db.add(token_record)
     await db.commit()
     
     return {
-        "id": str(db_user.id),
-        "username": db_user.username,
-        "email": db_user.email,
-        "city": db_user.city,
-        "created_at": db_user.created_at.isoformat(),
-        "access_token": token,
-        "token_type": "bearer"
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        "user": {
+            "id": str(db_user.id),
+            "username": db_user.username,
+            "email": db_user.email,
+            "city": db_user.city,
+            "created_at": db_user.created_at.isoformat()
+        }
     }
 
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.username == user.username))
     db_user = result.scalars().first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
         raise HTTPException(401, "Invalid credentials")
 
-    token = create_access_token(data={"sub": user.username})
+    # Create both access and refresh tokens
+    access_token, access_expires = create_access_token(data={"sub": user.username})
+    refresh_token, refresh_expires = create_refresh_token(data={"sub": user.username})
     
-    # Store token in database
+    # Store tokens in database
     token_record = TokenTable(
         user_id=db_user.id,
-        access_token=token,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        access_token_expires=access_expires,
+        refresh_token_expires=refresh_expires,
         status=True
     )
     db.add(token_record)
     await db.commit()
     
-    return {"access_token": token, "token_type": "bearer", "user": {"id": str(db_user.id), "username": db_user.username, "city": db_user.city, "created_at": db_user.created_at.isoformat()}}
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Convert to seconds
+        "user": {
+            "id": str(db_user.id), 
+            "username": db_user.username, 
+            "email": db_user.email,
+            "city": db_user.city, 
+            "created_at": db_user.created_at.isoformat()
+        }
+    }
 
 @router.get("/validate")
 async def validate_token(current_user: User = Depends(get_current_user)):
@@ -136,6 +162,62 @@ async def logout(dependencies: HTTPAuthorizationCredentials = Depends(oauth2_sch
         await db.refresh(existing_token)
     
     return {"message": "Logout Successfully"}
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(request: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Refresh access token using refresh token
+    """
+    # Verify refresh token
+    payload = verify_refresh_token(request.refresh_token)
+    username = payload.get("sub")
+    
+    # Get user
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(404, "User not found")
+    
+    # Find the token record with this refresh token
+    token_result = await db.execute(
+        select(TokenTable).filter(
+            TokenTable.user_id == user.id,
+            TokenTable.refresh_token == request.refresh_token,
+            TokenTable.status == True
+        )
+    )
+    token_record = token_result.scalars().first()
+    
+    if not token_record:
+        raise HTTPException(401, "Invalid refresh token")
+    
+    # Check if refresh token is expired
+    if token_record.refresh_token_expires and datetime.utcnow() > token_record.refresh_token_expires:
+        # Invalidate the token record
+        token_record.status = False
+        db.add(token_record)
+        await db.commit()
+        raise HTTPException(401, "Refresh token expired")
+    
+    # Create new access token (and optionally new refresh token)
+    new_access_token, access_expires = create_access_token(data={"sub": username})
+    new_refresh_token, refresh_expires = create_refresh_token(data={"sub": username})
+    
+    # Update token record with new tokens
+    token_record.access_token = new_access_token
+    token_record.refresh_token = new_refresh_token
+    token_record.access_token_expires = access_expires
+    token_record.refresh_token_expires = refresh_expires
+    
+    db.add(token_record)
+    await db.commit()
+    
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer",
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    }
 
 @router.post("/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):

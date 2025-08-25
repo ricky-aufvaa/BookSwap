@@ -4,7 +4,8 @@ import { User, UserCreate, UserLogin, AuthResponse, Book, BookCreate, GoogleBook
 import { API_CONFIG } from '../config';
 
 const STORAGE_KEYS = {
-  TOKEN: 'auth_token',
+  ACCESS_TOKEN: 'access_token',
+  REFRESH_TOKEN: 'refresh_token',
   USER: 'user_data',
 };
 
@@ -24,7 +25,7 @@ class ApiService {
     this.api.interceptors.request.use(
       async (config) => {
         try {
-          const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+          const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
           if (token && token !== 'undefined' && token !== 'null') {
             config.headers.Authorization = `Bearer ${token}`;
           }
@@ -38,14 +39,34 @@ class ApiService {
       }
     );
 
-    // Response interceptor for error handling
+    // Response interceptor for error handling and token refresh
     this.api.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401) {
-          // Token expired or invalid, clear storage
-          await this.clearAuthData();
+        const originalRequest = error.config;
+        
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          try {
+            // Try to refresh the token
+            const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+            if (refreshToken) {
+              const newTokens = await this.refreshAccessToken(refreshToken);
+              
+              // Update the original request with new token
+              originalRequest.headers.Authorization = `Bearer ${newTokens.access_token}`;
+              
+              // Retry the original request
+              return this.api(originalRequest);
+            }
+          } catch (refreshError) {
+            // Refresh failed, clear auth data and redirect to login
+            console.log('Token refresh failed:', refreshError);
+            await this.clearAuthData();
+          }
         }
+        
         return Promise.reject(error);
       }
     );
@@ -55,15 +76,19 @@ class ApiService {
   async signup(userData: UserCreate): Promise<AuthResponse> {
     try {
       const response: AxiosResponse<any> = await this.api.post('/signup', userData);
-      const { access_token, id, username, city, created_at } = response.data;
+      const { access_token, refresh_token, user } = response.data;
       
-      // Store token and user data
+      // Store tokens and user data
       if (access_token) {
-        await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, access_token);
+        await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
+      }
+      if (refresh_token) {
+        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
       }
       
-      const user = { id, username, city, created_at };
-      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      if (user) {
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      }
       
       return { access_token, user, token_type: 'bearer' };
     } catch (error: any) {
@@ -75,14 +100,22 @@ class ApiService {
     try {
       console.log('ApiService: Attempting login for:', credentials.username);
       const response: AxiosResponse<any> = await this.api.post('/login', credentials);
-      const { access_token, user } = response.data;
+      const { access_token, refresh_token, user } = response.data;
       
-      console.log('ApiService: Login response:', { access_token: access_token ? 'present' : 'missing', user });
+      console.log('ApiService: Login response:', { 
+        access_token: access_token ? 'present' : 'missing', 
+        refresh_token: refresh_token ? 'present' : 'missing',
+        user 
+      });
       
-      // Store token and user data
+      // Store tokens and user data
       if (access_token) {
-        await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, access_token);
-        console.log('ApiService: Token stored successfully');
+        await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
+        console.log('ApiService: Access token stored successfully');
+      }
+      if (refresh_token) {
+        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+        console.log('ApiService: Refresh token stored successfully');
       }
       
       if (user) {
@@ -90,6 +123,7 @@ class ApiService {
         const userWithId = { 
           id: user.id || 'temp-id', 
           username: user.username, 
+          email: user.email,
           city: user.city,
           created_at: user.created_at
         };
@@ -128,6 +162,37 @@ class ApiService {
     } catch (error) {
       console.error('ApiService: Token validation failed:', error);
       return { valid: false };
+    }
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
+    try {
+      console.log('ApiService: Refreshing access token...');
+      
+      // Create a new axios instance without interceptors to avoid infinite loops
+      const refreshApi = axios.create({
+        baseURL: API_CONFIG.API_BASE_URL,
+        timeout: API_CONFIG.TIMEOUT,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const response: AxiosResponse<any> = await refreshApi.post('/refresh', {
+        refresh_token: refreshToken,
+      });
+
+      const { access_token, refresh_token: new_refresh_token } = response.data;
+
+      // Store new tokens
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, new_refresh_token);
+
+      console.log('ApiService: Tokens refreshed successfully');
+      return { access_token, refresh_token: new_refresh_token };
+    } catch (error: any) {
+      console.error('ApiService: Token refresh failed:', error);
+      throw new Error('Token refresh failed');
     }
   }
 
@@ -264,7 +329,7 @@ class ApiService {
 
   // Storage methods
   async getStoredToken(): Promise<string | null> {
-    return await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+    return await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   }
 
   async getStoredUser(): Promise<User | null> {
@@ -277,7 +342,7 @@ class ApiService {
   }
 
   async clearAuthData(): Promise<void> {
-    await AsyncStorage.multiRemove([STORAGE_KEYS.TOKEN, STORAGE_KEYS.USER]);
+    await AsyncStorage.multiRemove([STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.USER]);
   }
 
   // Network configuration methods (removed automatic reconfiguration)
