@@ -16,6 +16,7 @@ import { RouteProp } from '@react-navigation/native';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import BookCard from '../components/BookCard';
+import Avatar from '../components/Avatar';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
@@ -112,14 +113,21 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           duration={layout.animation.normal}
           style={styles.headerContainer}
         >
-          <View style={styles.greetingContainer}>
-            <Text style={styles.greeting}>
-              {getGreeting()}, {user?.username || 'Reader'}!
-            </Text>
-            <Text style={styles.location}>
-              <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
-              {' '}{user?.city || 'Unknown City'}
-            </Text>
+          <View style={styles.userSection}>
+            <Avatar 
+              seed={user?.avatar_seed} 
+              size={50} 
+              style={styles.headerAvatar}
+            />
+            <View style={styles.greetingContainer}>
+              <Text style={styles.greeting}>
+                {getGreeting()}, {user?.username || 'Reader'}!
+              </Text>
+              <Text style={styles.location}>
+                <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+                {' '}{user?.city || 'Unknown City'}
+              </Text>
+            </View>
           </View>
           
           <View style={styles.headerActions}>
@@ -279,6 +287,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.lg,
+  },
+  userSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerAvatar: {
+    marginRight: spacing.md,
+    borderWidth: 2,
+    borderColor: colors.accent,
   },
   greetingContainer: {
     flex: 1,

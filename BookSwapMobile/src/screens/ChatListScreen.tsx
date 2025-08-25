@@ -14,6 +14,7 @@ import { RouteProp, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Card from '../components/Card';
+import Avatar from '../components/Avatar';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
@@ -90,7 +91,11 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
       <Card style={styles.chatRoomCard}>
         <View style={styles.chatRoomHeader}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person-circle" size={50} color={colors.primary} />
+            <Avatar 
+              seed={getOtherUserName(item)} 
+              size={50} 
+              style={styles.chatAvatar}
+            />
           </View>
           <View style={styles.chatRoomInfo}>
             <Text style={styles.userName}>{getOtherUserName(item)}</Text>
@@ -178,6 +183,10 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginRight: spacing.md,
+  },
+  chatAvatar: {
+    borderWidth: 2,
+    borderColor: colors.border,
   },
   chatRoomInfo: {
     flex: 1,

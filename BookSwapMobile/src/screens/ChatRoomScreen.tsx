@@ -15,6 +15,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
+import Avatar from '../components/Avatar';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
@@ -108,15 +109,34 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
         isMyMessage ? styles.myMessageContainer : styles.otherMessageContainer
       ]}>
         <View style={[
-          styles.messageBubble,
-          isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
+          styles.messageRow,
+          isMyMessage ? styles.myMessageRow : styles.otherMessageRow
         ]}>
-          <Text style={[
-            styles.messageText,
-            isMyMessage ? styles.myMessageText : styles.otherMessageText
+          {!isMyMessage && (
+            <Avatar 
+              seed={item.sender_username} 
+              size={32} 
+              style={styles.messageAvatar}
+            />
+          )}
+          <View style={[
+            styles.messageBubble,
+            isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
           ]}>
-            {item.message}
-          </Text>
+            <Text style={[
+              styles.messageText,
+              isMyMessage ? styles.myMessageText : styles.otherMessageText
+            ]}>
+              {item.message}
+            </Text>
+          </View>
+          {isMyMessage && (
+            <Avatar 
+              seed={item.sender_username} 
+              size={32} 
+              style={styles.messageAvatar}
+            />
+          )}
         </View>
         {showTime && (
           <Text style={[
@@ -217,6 +237,21 @@ const styles = StyleSheet.create({
   otherMessageContainer: {
     alignSelf: 'flex-start',
     alignItems: 'flex-start',
+  },
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  myMessageRow: {
+    justifyContent: 'flex-end',
+  },
+  otherMessageRow: {
+    justifyContent: 'flex-start',
+  },
+  messageAvatar: {
+    marginHorizontal: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   messageBubble: {
     paddingHorizontal: spacing.md,
