@@ -1,16 +1,16 @@
 // API Configuration for BookSwap Mobile App
 import { Platform } from 'react-native';
 
-const DEPLOYED_URL = "https://bookswap-yb6p.onrender.com"; // Production backend
+// const DEPLOYED_URL = "https://bookswap-yb6p.onrender.com"; // Production backend
 
 // For local development with Expo Go on phone, use your PC's network IP
 // Replace 192.168.1.100 with your actual PC's IP address
 // To find your IP: Windows (ipconfig), Mac/Linux (ifconfig or ip addr)
-// const LOCAL_DEV_URL = "http://192.168.29.189:8000"; // Your PC's actual IP
+const LOCAL_DEV_URL = "http://192.168.29.189:8000"; // Your PC's actual IP
 // const LOCAL_DEV_URL = "http://127.0.0.1:8000"; // For PC browser testing
 
 // Use LOCAL_DEV_URL for phone testing, LOCALHOST_URL for PC browser
-// const DEPLOYED_URL = LOCAL_DEV_URL;
+const DEPLOYED_URL = LOCAL_DEV_URL;
 
 const config = {
   development: {

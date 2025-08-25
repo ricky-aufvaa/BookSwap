@@ -6,6 +6,7 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +16,8 @@ import { RouteProp } from '@react-navigation/native';
 
 import Button from '../components/Button';
 import Card from '../components/Card';
+import Avatar from '../components/Avatar';
+import AvatarSelector from '../components/AvatarSelector';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
@@ -35,6 +38,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const [updatingAvatar, setUpdatingAvatar] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -42,9 +47,20 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadUserData = async () => {
     try {
-      const userData = await apiService.getStoredUser();
+      // First try to get fresh user data from backend, fallback to stored data
+      let userData = null;
+      try {
+        userData = await apiService.getProfile();
+        console.log('ProfileScreen: Fresh user data from backend:', userData);
+      } catch (profileError) {
+        console.log('ProfileScreen: Failed to get fresh profile, using stored data');
+        userData = await apiService.getStoredUser();
+        console.log('ProfileScreen: Stored user data:', userData);
+      }
+      
       setUser(userData);
     } catch (error: any) {
+      console.error('ProfileScreen: Error loading profile data:', error);
       Alert.alert('Error', 'Failed to load profile data');
     } finally {
       setLoading(false);
@@ -79,6 +95,23 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       }
     } finally {
       setLoggingOut(false);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    setShowAvatarSelector(true);
+  };
+
+  const handleAvatarSelect = async (avatarSeed: string | null) => {
+    setUpdatingAvatar(true);
+    try {
+      const updatedUser = await apiService.updateAvatar(avatarSeed);
+      setUser(updatedUser);
+      Alert.alert('Success', 'Avatar updated successfully!');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update avatar');
+    } finally {
+      setUpdatingAvatar(false);
     }
   };
 
@@ -129,13 +162,25 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         >
           <Card style={styles.profileCard}>
             <View style={styles.profileHeader}>
-              <View style={styles.avatarContainer}>
-                <Ionicons
-                  name="person"
-                  size={48}
-                  color={colors.background}
+              <TouchableOpacity 
+                style={styles.avatarTouchable}
+                onPress={handleAvatarPress}
+                disabled={updatingAvatar}
+              >
+                <Avatar 
+                  seed={user?.avatar_seed} 
+                  size={80} 
+                  style={styles.avatarStyle}
                 />
-              </View>
+                <View style={styles.avatarEditIndicator}>
+                  <Ionicons name="camera" size={16} color={colors.background} />
+                </View>
+                {updatingAvatar && (
+                  <View style={styles.avatarLoadingOverlay}>
+                    <Ionicons name="refresh" size={20} color={colors.background} />
+                  </View>
+                )}
+              </TouchableOpacity>
               <View style={styles.profileInfo}>
                 <Text style={styles.username}>{user?.username}</Text>
                 <View style={styles.locationContainer}>
@@ -256,6 +301,15 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.appInfo}>Made with ❤️ for book lovers</Text>
         </Animatable.View>
       </ScrollView>
+
+      {/* Avatar Selector Modal */}
+      <AvatarSelector
+        visible={showAvatarSelector}
+        onClose={() => setShowAvatarSelector(false)}
+        onSelect={handleAvatarSelect}
+        currentSeed={user?.avatar_seed}
+        title="Choose Your Avatar"
+      />
     </SafeAreaView>
   );
 };
@@ -301,14 +355,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  avatarTouchable: {
+    position: 'relative',
+    marginRight: spacing.lg,
+  },
+  avatarStyle: {
+    borderWidth: 3,
+    borderColor: colors.accent,
+  },
+  avatarEditIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
     backgroundColor: colors.accent,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
+  avatarLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileInfo: {
     flex: 1,

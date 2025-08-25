@@ -10,7 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from models.user import User
 from models.token import TokenTable
 from models.password_reset import PasswordReset
-from schemas.user import UserCreate, UserLogin, UserOut, ForgotPasswordRequest, ResetPasswordRequest, VerifyResetCodeRequest, TokenResponse, RefreshTokenRequest
+from schemas.user import UserCreate, UserLogin, UserOut, ForgotPasswordRequest, ResetPasswordRequest, VerifyResetCodeRequest, TokenResponse, RefreshTokenRequest, UpdateAvatarRequest
 from config.database import get_db
 from config.settings import settings
 from utils.auth_utils import create_access_token, create_refresh_token, hash_password, verify_password, get_current_user, oauth2_scheme, verify_refresh_token
@@ -35,7 +35,8 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
         username=user.username,
         email=user.email,
         password_hash=hash_password(user.password),
-        city=user.city
+        city=user.city,
+        avatar_seed=user.avatar_seed
     )
     db.add(db_user)
     await db.commit()
@@ -67,6 +68,7 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
             "username": db_user.username,
             "email": db_user.email,
             "city": db_user.city,
+            "avatar_seed": db_user.avatar_seed,
             "created_at": db_user.created_at.isoformat()
         }
     }
@@ -94,18 +96,23 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
     db.add(token_record)
     await db.commit()
     
+    user_data = {
+        "id": str(db_user.id), 
+        "username": db_user.username, 
+        "email": db_user.email or "",
+        "city": db_user.city or "",
+        "avatar_seed": db_user.avatar_seed,
+        "created_at": db_user.created_at.isoformat() if db_user.created_at else ""
+    }
+    
+    print(f"Login response user data: {user_data}")
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Convert to seconds
-        "user": {
-            "id": str(db_user.id), 
-            "username": db_user.username, 
-            "email": db_user.email,
-            "city": db_user.city, 
-            "created_at": db_user.created_at.isoformat()
-        }
+        "user": user_data
     }
 
 @router.get("/validate")
@@ -349,3 +356,28 @@ async def reset_password(request: ResetPasswordRequest, db: AsyncSession = Depen
     await db.commit()
     
     return {"message": "Password reset successfully. Please log in with your new password."}
+
+@router.put("/update-avatar", response_model=UserOut)
+async def update_avatar(
+    request: UpdateAvatarRequest, 
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update user's avatar seed
+    """
+    # Update user's avatar seed
+    current_user.avatar_seed = request.avatar_seed
+    
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    
+    return current_user
+
+@router.get("/profile", response_model=UserOut)
+async def get_profile(current_user: User = Depends(get_current_user)):
+    """
+    Get current user's profile information
+    """
+    return current_user

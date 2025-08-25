@@ -43,15 +43,24 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadData = async () => {
     try {
-      const [userData, booksData] = await Promise.all([
-        apiService.getStoredUser(),
-        apiService.getMyBooks(),
-      ]);
+      // First try to get fresh user data from backend, fallback to stored data
+      let userData = null;
+      try {
+        userData = await apiService.getProfile();
+        console.log('HomeScreen: Fresh user data from backend:', userData);
+      } catch (profileError) {
+        console.log('HomeScreen: Failed to get fresh profile, using stored data');
+        userData = await apiService.getStoredUser();
+        console.log('HomeScreen: Stored user data:', userData);
+      }
+
+      const booksData = await apiService.getMyBooks();
 
       setUser(userData);
       setRecentBooks(booksData.slice(0, 3)); // Show only recent 3 books
       setTotalBooks(booksData.length)
     } catch (error: any) {
+      console.error('HomeScreen: Error loading data:', error);
       Alert.alert('Error', 'Failed to load data');
     } finally {
       setLoading(false);

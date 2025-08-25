@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     city: Optional[str] = None
+    avatar_seed: Optional[str] = None
     
     @validator('password')
     def validate_password(cls, v):
@@ -26,6 +27,7 @@ class UserOut(BaseModel):
     username: str
     email: Optional[str] = None  # Make email optional for existing users
     city: Optional[str] = None
+    avatar_seed: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -71,3 +73,6 @@ class VerifyResetCodeRequest(BaseModel):
         if not v.isdigit() or len(v) != 6:
             raise ValueError('Reset code must be a 6-digit number')
         return v
+
+class UpdateAvatarRequest(BaseModel):
+    avatar_seed: Optional[str] = None

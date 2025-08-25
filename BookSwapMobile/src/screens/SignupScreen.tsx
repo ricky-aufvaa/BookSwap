@@ -7,7 +7,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Animatable from 'react-native-animatable';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,6 +18,8 @@ import { RouteProp } from '@react-navigation/native';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Card from '../components/Card';
+import Avatar from '../components/Avatar';
+import AvatarSelector from '../components/AvatarSelector';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
@@ -26,7 +30,9 @@ import { apiService } from '../services/api';
 const SignupFormComponent = React.memo<{
   onSubmit: (username: string, email: string, city: string, password: string, confirmPassword: string) => void;
   loading: boolean;
-}>(({ onSubmit, loading }) => {
+  selectedAvatarSeed: string | null;
+  onShowAvatarSelector: () => void;
+}>(({ onSubmit, loading, selectedAvatarSeed, onShowAvatarSelector }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
@@ -52,6 +58,26 @@ const SignupFormComponent = React.memo<{
 
   return (
     <View style={styles.formContainer}>
+      {/* Avatar Selection */}
+      <View style={styles.avatarSection}>
+        <Text style={styles.avatarSectionTitle}>Choose Your Avatar (Optional)</Text>
+        <TouchableOpacity 
+          style={styles.avatarSelector}
+          onPress={onShowAvatarSelector}
+        >
+          <Avatar seed={selectedAvatarSeed || undefined} size={60} />
+          <View style={styles.avatarSelectorText}>
+            <Text style={styles.avatarSelectorTitle}>
+              {selectedAvatarSeed ? `Avatar ${selectedAvatarSeed}` : 'Select Avatar'}
+            </Text>
+            <Text style={styles.avatarSelectorSubtitle}>
+              {selectedAvatarSeed ? 'Tap to change' : 'Tap to choose'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+        </TouchableOpacity>
+      </View>
+
       <Input
         id="signup-username"
         name="username"
@@ -131,6 +157,8 @@ interface Props {
 
 const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
+  const [selectedAvatarSeed, setSelectedAvatarSeed] = useState<string | null>(null);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
 
   const handleSignup = async (username: string, email: string, city: string, password: string, confirmPassword: string) => {
     // Validation
@@ -181,6 +209,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
         email: email.trim(),
         password: password,
         city: city.trim(),
+        avatar_seed: selectedAvatarSeed || undefined,
       });
 
       // Then immediately login to get proper authentication
@@ -236,6 +265,8 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
             <SignupFormComponent
               onSubmit={handleSignup}
               loading={loading}
+              selectedAvatarSeed={selectedAvatarSeed}
+              onShowAvatarSelector={() => setShowAvatarSelector(true)}
             />
           </Card>
 
@@ -252,6 +283,18 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Avatar Selector Modal */}
+      <AvatarSelector
+        visible={showAvatarSelector}
+        onClose={() => setShowAvatarSelector(false)}
+        onSelect={(seed) => {
+          setSelectedAvatarSeed(seed);
+          setShowAvatarSelector(false);
+        }}
+        currentSeed={selectedAvatarSeed || undefined}
+        title="Choose Your Avatar"
+      />
     </SafeAreaView>
   );
 };
@@ -300,6 +343,36 @@ const styles = StyleSheet.create({
   },
   footerText: {
     ...textStyles.body,
+    color: colors.textSecondary,
+  },
+  avatarSection: {
+    marginBottom: spacing.md,
+  },
+  avatarSectionTitle: {
+    ...textStyles.label,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  avatarSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  avatarSelectorText: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  avatarSelectorTitle: {
+    ...textStyles.body,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  avatarSelectorSubtitle: {
+    ...textStyles.bodySmall,
     color: colors.textSecondary,
   },
 });

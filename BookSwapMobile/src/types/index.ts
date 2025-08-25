@@ -2,8 +2,9 @@
 export interface User {
   id: string;
   username: string;
-  email: string;
-  city: string;
+  email?: string;
+  city?: string;
+  avatar_seed?: string;
   created_at: string;
 }
 
@@ -12,6 +13,7 @@ export interface UserCreate {
   email: string;
   password: string;
   city: string;
+  avatar_seed?: string;
 }
 
 export interface UserLogin {

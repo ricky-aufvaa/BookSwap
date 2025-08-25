@@ -87,7 +87,17 @@ class ApiService {
       }
       
       if (user) {
-        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        // Store complete user data including avatar_seed
+        const userWithId = { 
+          id: user.id || 'temp-id', 
+          username: user.username, 
+          email: user.email,
+          city: user.city,
+          avatar_seed: user.avatar_seed,
+          created_at: user.created_at
+        };
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userWithId));
+        console.log('ApiService: Signup user data stored:', userWithId);
       }
       
       return { access_token, user, token_type: 'bearer' };
@@ -119,12 +129,13 @@ class ApiService {
       }
       
       if (user) {
-        // Store complete user data including created_at
+        // Store complete user data including avatar_seed
         const userWithId = { 
           id: user.id || 'temp-id', 
           username: user.username, 
           email: user.email,
           city: user.city,
+          avatar_seed: user.avatar_seed,
           created_at: user.created_at
         };
         await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userWithId));
@@ -338,6 +349,34 @@ class ApiService {
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       return null;
+    }
+  }
+
+  async updateAvatar(avatarSeed: string | null): Promise<User> {
+    try {
+      const response: AxiosResponse<User> = await this.api.put('/update-avatar', {
+        avatar_seed: avatarSeed,
+      });
+      
+      // Update stored user data
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
+      
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to update avatar');
+    }
+  }
+
+  async getProfile(): Promise<User> {
+    try {
+      const response: AxiosResponse<User> = await this.api.get('/profile');
+      
+      // Update stored user data
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
+      
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get profile');
     }
   }
 
