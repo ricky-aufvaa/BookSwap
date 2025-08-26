@@ -6,6 +6,16 @@ export interface User {
   city?: string;
   avatar_seed?: string;
   created_at: string;
+  // Trust & Safety System properties
+  trust_score?: number;
+  trust_level?: string;
+  average_rating?: number;
+  total_ratings?: number;
+  total_transactions?: number;
+  successful_transactions?: number;
+  late_returns?: number;
+  is_profile_hidden?: boolean;
+  badges?: string[];
 }
 
 export interface UserCreate {

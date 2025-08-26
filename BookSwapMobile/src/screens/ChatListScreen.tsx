@@ -21,6 +21,7 @@ import { spacing } from '../constants/spacing';
 import { RootStackParamList, ChatRoom } from '../types';
 import { apiService } from '../services/api';
 import { formatRelativeTime } from '../utils/dateUtils';
+import { useUnreadMessages } from '../contexts/UnreadMessagesContext';
 
 type ChatListScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatList'>;
 type ChatListScreenRouteProp = RouteProp<RootStackParamList, 'ChatList'>;
@@ -38,6 +39,7 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfiles, setUserProfiles] = useState<{[username: string]: any}>({});
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { updateUnreadCount } = useUnreadMessages();
 
   const getCurrentUser = async () => {
     try {
@@ -71,6 +73,9 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
       const rooms = await apiService.getChatRooms();
       console.log('ChatList: Fetched rooms:', JSON.stringify(rooms[0], null, 2)); // Debug log
       setChatRooms(rooms);
+      
+      // Update unread count in context
+      updateUnreadCount();
       
       // Always fetch user profiles for all other users in chat rooms
       if (currentUser) {

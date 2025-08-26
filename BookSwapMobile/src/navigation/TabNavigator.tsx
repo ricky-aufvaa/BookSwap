@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 
@@ -13,8 +14,33 @@ import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
 import { TabParamList } from '../types';
+import { useUnreadMessages } from '../contexts/UnreadMessagesContext';
 
 const Tab = createBottomTabNavigator<TabParamList>();
+
+// Custom icon component with badge for ChatList
+const ChatIconWithBadge: React.FC<{ focused: boolean; color: string; size: number }> = ({ focused, color, size }) => {
+  const { totalUnreadCount } = useUnreadMessages();
+  const iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+
+  return (
+    <View style={styles.iconContainer}>
+      <Animatable.View
+        animation={focused ? 'bounceIn' : undefined}
+        duration={300}
+      >
+        <Ionicons name={iconName as any} size={size} color={color} />
+      </Animatable.View>
+      {totalUnreadCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
 
 const TabNavigator: React.FC = () => {
   return (
@@ -125,7 +151,9 @@ const TabNavigator: React.FC = () => {
         component={ChatListScreen}
         options={{
           tabBarLabel: '',
-          // tabBarLabel: 'Messages',
+          tabBarIcon: ({ focused, color, size }) => (
+            <ChatIconWithBadge focused={focused} color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen
@@ -139,5 +167,29 @@ const TabNavigator: React.FC = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: colors.error || '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
 
 export default TabNavigator;

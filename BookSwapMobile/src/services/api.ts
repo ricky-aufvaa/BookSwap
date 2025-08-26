@@ -433,6 +433,134 @@ class ApiService {
     
     return 'An unexpected error occurred';
   }
+
+  // Trust & Safety System methods
+  async getTrustProfile(userId: string): Promise<any> {
+    try {
+      const response = await this.api.get(`/trust/profile/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get trust profile');
+    }
+  }
+
+  async getTrustSummary(userId: string): Promise<any> {
+    try {
+      const response = await this.api.get(`/trust/summary/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get trust summary');
+    }
+  }
+
+  async getTrustLeaderboard(limit: number = 10): Promise<any[]> {
+    try {
+      const response = await this.api.get(`/trust/leaderboard?limit=${limit}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get trust leaderboard');
+    }
+  }
+
+  async submitRating(ratingData: {
+    transaction_id: string;
+    rated_user_id: string;
+    rating: number;
+    review_text?: string;
+    rating_type: string;
+  }): Promise<any> {
+    try {
+      const response = await this.api.post('/ratings/', ratingData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to submit rating');
+    }
+  }
+
+  async getUserRatings(userId: string, limit: number = 20): Promise<any[]> {
+    try {
+      const response = await this.api.get(`/ratings/user/${userId}?limit=${limit}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get user ratings');
+    }
+  }
+
+  async getPendingRatings(): Promise<any[]> {
+    try {
+      const response = await this.api.get('/ratings/pending');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get pending ratings');
+    }
+  }
+
+  async createTransaction(transactionData: {
+    book_id: string;
+    owner_id: string;
+    transaction_type: string;
+    expected_return_date?: string;
+    security_deposit?: number;
+    rental_fee?: number;
+    notes?: string;
+  }): Promise<any> {
+    try {
+      const response = await this.api.post('/transactions/', transactionData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to create transaction');
+    }
+  }
+
+  async getUserTransactions(status?: string): Promise<any[]> {
+    try {
+      const params = status ? { status } : {};
+      const response = await this.api.get('/transactions/', { params });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get transactions');
+    }
+  }
+
+  async updateTransactionStatus(transactionId: string, statusData: {
+    status: string;
+    actual_return_date?: string;
+    notes?: string;
+  }): Promise<any> {
+    try {
+      const response = await this.api.patch(`/transactions/${transactionId}/status`, statusData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to update transaction status');
+    }
+  }
+
+  async getPendingRequests(): Promise<any[]> {
+    try {
+      const response = await this.api.get('/transactions/pending/received');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get pending requests');
+    }
+  }
+
+  async getActiveBorrowedBooks(): Promise<any[]> {
+    try {
+      const response = await this.api.get('/transactions/active/borrowed');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get borrowed books');
+    }
+  }
+
+  async getActiveLentBooks(): Promise<any[]> {
+    try {
+      const response = await this.api.get('/transactions/active/lent');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get lent books');
+    }
+  }
 }
 
 // Create and export a singleton instance

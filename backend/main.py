@@ -56,6 +56,15 @@ app.include_router(auth_router, prefix="/api/v1", tags=["auth"])
 app.include_router(books_router, prefix="/api/v1", tags=["books"])
 app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
 
+# Trust & Safety System routers
+from api.trust import router as trust_router
+from api.ratings import router as ratings_router
+from api.transactions import router as transactions_router
+
+app.include_router(trust_router, prefix="/api/v1", tags=["trust"])
+app.include_router(ratings_router, prefix="/api/v1", tags=["ratings"])
+app.include_router(transactions_router, prefix="/api/v1", tags=["transactions"])
+
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):

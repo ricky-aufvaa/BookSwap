@@ -29,10 +29,13 @@ import Animated, {
 import Avatar from './Avatar';
 import Button from './Button';
 import Card from './Card';
+import TrustScore from './TrustScore';
+import TrustBadges from './TrustBadges';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
 import { User } from '../types';
+import { apiService } from '../services/api';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -180,11 +183,27 @@ const BookOwnersModal: React.FC<BookOwnersModalProps> = ({
               style={styles.avatar}
             />
             <View style={styles.ownerDetails}>
-              <Text style={styles.ownerName}>{owner.username}</Text>
+              <View style={styles.ownerHeader}>
+                <Text style={styles.ownerName}>{owner.username}</Text>
+                <TrustScore 
+                  trustScore={owner.trust_score || 100} 
+                  trustLevel={owner.trust_level || 'building_trust'} 
+                  size="small" 
+                  showLabel={false}
+                />
+              </View>
               <Text style={styles.ownerCity}>
                 <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
                 {' '}{owner.city || 'Unknown City'}
               </Text>
+              <View style={styles.ownerTrustInfo}>
+                <TrustBadges 
+                  badges={owner.badges || []} 
+                  size="small" 
+                  maxVisible={2}
+                  horizontal={true}
+                />
+              </View>
             </View>
           </View>
           <Button
@@ -424,17 +443,27 @@ const styles = StyleSheet.create({
   ownerDetails: {
     flex: 1,
   },
+  ownerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
   ownerName: {
     ...textStyles.bodyLarge,
     color: colors.textPrimary,
     fontWeight: '600',
-    marginBottom: spacing.xs,
+    flex: 1,
   },
   ownerCity: {
     ...textStyles.bodySmall,
     color: colors.textSecondary,
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  ownerTrustInfo: {
+    marginTop: spacing.xs,
   },
   addToLibraryContainer: {
     marginTop: spacing.md,

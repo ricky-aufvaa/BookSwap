@@ -22,6 +22,10 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
+def get_db_engine():
+    """Get the database engine for migrations and scripts"""
+    return engine
+
 async def create_db_and_tables():
     async with engine.begin() as conn:
         from models.user import User
@@ -30,4 +34,7 @@ async def create_db_and_tables():
         from models.token import TokenTable
         from models.chat import ChatRoom, ChatMessage
         from models.password_reset import PasswordReset
+        # Trust system models
+        from models.rating import UserRating, TrustBadge
+        from models.transaction import Transaction
         await conn.run_sync(Base.metadata.create_all)

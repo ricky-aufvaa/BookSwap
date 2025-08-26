@@ -19,3 +19,4 @@ class Book(Base):
     
     # Relationships
     owner = relationship("User", back_populates="books")
+    transactions = relationship("Transaction", back_populates="book", cascade="all, delete-orphan")
