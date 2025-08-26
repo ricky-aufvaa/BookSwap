@@ -144,7 +144,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       >
         {/* Header */}
         <Animatable.View
-          animation="fadeInDown"
+          // animation="fadeInDown"
+          animation="fadeInRight"
           duration={layout.animation.normal}
           style={styles.headerContainer}
         >
@@ -156,7 +157,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Profile Card */}
         <Animatable.View
-          animation="fadeInUp"
+          // animation="fadeInUp"
+          animation="fadeInRight"
           duration={layout.animation.normal}
           delay={100}
         >
@@ -169,7 +171,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               >
                 <Avatar 
                   seed={user?.avatar_seed} 
-                  size={80} 
+                  size={150} 
                   style={styles.avatarStyle}
                 />
                 <View style={styles.avatarEditIndicator}>
@@ -201,7 +203,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Stats Cards */}
         <Animatable.View
-          animation="fadeInUp"
+          animation="fadeInRight"
+          // animation="fadeInUp"
           duration={layout.animation.normal}
           delay={200}
           style={styles.statsContainer}
@@ -275,7 +278,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Logout Button */}
         <Animatable.View
-          animation="fadeInUp"
+          // animation="fadeInUp"
+          animation="fadeInRight"
           duration={layout.animation.normal}
           delay={400}
           style={styles.logoutContainer}
@@ -292,7 +296,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* App Info */}
         <Animatable.View
-          animation="fadeIn"
+          // animation="fadeIn"
+          animation="fadeInRight"
           duration={layout.animation.slow}
           delay={500}
           style={styles.appInfoContainer}
@@ -337,6 +342,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   headerContainer: {
+    justifyContent:"center",
     marginBottom: spacing.lg,
   },
   title: {
@@ -350,14 +356,15 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     marginBottom: spacing.lg,
+    // backgroundColor:"red",
   },
   profileHeader: {
-    flexDirection: 'row',
+    gap:spacing.lg,
+    // flexDirection: 'row',
     alignItems: 'center',
   },
   avatarTouchable: {
     position: 'relative',
-    marginRight: spacing.lg,
   },
   avatarStyle: {
     borderWidth: 3,
@@ -388,6 +395,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileInfo: {
+    alignItems: 'center',
     flex: 1,
   },
   username: {
@@ -460,8 +468,8 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   logoutContainer: {
-    // bottom:'auto',
-    marginTop:spacing['5xl'],
+    bottom:'auto',
+    // marginTop:spacing['5xl'],
     marginBottom: spacing.xl,
   },
   appInfoContainer: {

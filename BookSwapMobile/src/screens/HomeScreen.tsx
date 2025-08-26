@@ -178,7 +178,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.actionsGrid}>
             <Card onPress={() => navigation.navigate('MyBooks')} style={styles.actionCard}>
               <View style={styles.actionContent}>
-                <Ionicons name="library-outline" size={32} color={colors.accent} />
+                {/* <Ionicons name="library-outline" size={32} color={colors.accent} /> */}
+                <Ionicons name="library-outline" size={32} />
                 <Text style={styles.actionTitle}>My Library</Text>
                 <Text style={styles.actionSubtitle}>Manage your books</Text>
               </View>
@@ -186,7 +187,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             
             <Card onPress={() => navigation.navigate('Search')} style={styles.actionCard}>
               <View style={styles.actionContent}>
-                <Ionicons name="search-outline" size={32} color={colors.success} />
+                <Ionicons name="search-outline" size={32}  />
                 <Text style={styles.actionTitle}>Find Books</Text>
                 <Text style={styles.actionSubtitle}>Search & discover</Text>
               </View>
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    ...textStyles.h3,
+    ...textStyles.h4,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },

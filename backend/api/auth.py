@@ -381,3 +381,16 @@ async def get_profile(current_user: User = Depends(get_current_user)):
     Get current user's profile information
     """
     return current_user
+
+@router.get("/profile/{username}", response_model=UserOut)
+async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
+    """
+    Get user profile by username (for displaying other users' info like avatars)
+    """
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(404, "User not found")
+    
+    return user

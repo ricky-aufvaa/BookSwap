@@ -40,6 +40,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds until access token expires
+    user: Optional[UserOut] = None  # Include user data for login/signup responses
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str

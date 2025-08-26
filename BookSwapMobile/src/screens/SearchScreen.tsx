@@ -45,6 +45,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [modalBookTitle, setModalBookTitle] = useState('');
+  const [modalBookAuthor, setModalBookAuthor] = useState('');
   const [bookOwners, setBookOwners] = useState<User[]>([]);
   const [ownersLoading, setOwnersLoading] = useState(false);
 
@@ -82,7 +83,7 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
     // Navigate to book details or show owners
     if (book.available_in_city) {
       // Show book owners modal directly - no alert needed
-      showBookOwners(book.title);
+      showBookOwners(book.title, book.author);
     } else {
       Alert.alert(
         'Book Not Available',
@@ -108,9 +109,10 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const showBookOwners = async (bookTitle: string) => {
+  const showBookOwners = async (bookTitle: string, bookAuthor?: string) => {
     try {
       setModalBookTitle(bookTitle);
+      setModalBookAuthor(bookAuthor || '');
       setModalVisible(true);
       setOwnersLoading(true);
       setBookOwners([]);
@@ -128,8 +130,29 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
   const handleCloseModal = () => {
     setModalVisible(false);
     setModalBookTitle('');
+    setModalBookAuthor('');
     setBookOwners([]);
     setOwnersLoading(false);
+  };
+
+  const handleAddToLibrary = async () => {
+    try {
+      const newBook = await apiService.addBook({
+        title: modalBookTitle.trim(),
+        author: modalBookAuthor.trim(),
+      });
+
+      console.log('Book added successfully:', newBook);
+      Alert.alert(
+        'Success',
+        `${modalBookTitle} by ${modalBookAuthor || 'Unknown Author'} added successfully to your library!`
+      );
+      
+      // Close the modal after adding
+      handleCloseModal();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to add book to library');
+    }
   };
 
   const handleContactOwner = async (owner: User) => {
@@ -296,9 +319,11 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
         visible={modalVisible}
         onClose={handleCloseModal}
         bookTitle={modalBookTitle}
+        bookAuthor={modalBookAuthor}
         owners={bookOwners}
         loading={ownersLoading}
         onContactOwner={handleContactOwner}
+        onAddToLibrary={handleAddToLibrary}
       />
     </SafeAreaView>
   );

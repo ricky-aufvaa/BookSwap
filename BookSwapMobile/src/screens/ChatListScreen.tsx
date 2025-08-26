@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -34,11 +34,59 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfiles, setUserProfiles] = useState<{[username: string]: any}>({});
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const getCurrentUser = async () => {
+    try {
+      const user = await apiService.getStoredUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.log('Error getting current user:', error);
+    }
+  };
+
+  const fetchUserProfile = async (username: string) => {
+    if (userProfiles[username]) {
+      return userProfiles[username]; // Return cached profile
+    }
+
+    try {
+      const profile = await apiService.getUserProfile(username);
+      setUserProfiles(prev => ({
+        ...prev,
+        [username]: profile
+      }));
+      return profile;
+    } catch (error) {
+      console.log(`Error fetching profile for ${username}:`, error);
+      return null;
+    }
+  };
 
   const fetchChatRooms = async () => {
     try {
       const rooms = await apiService.getChatRooms();
+      console.log('ChatList: Fetched rooms:', JSON.stringify(rooms[0], null, 2)); // Debug log
       setChatRooms(rooms);
+      
+      // Always fetch user profiles for all other users in chat rooms
+      if (currentUser) {
+        const otherUsernames = rooms.map(room => {
+          if (room.user1_username === currentUser.username) {
+            return room.user2_username;
+          } else {
+            return room.user1_username;
+          }
+        }).filter(username => username);
+
+        // Fetch profiles for all users (not just uncached ones) to ensure we have latest avatar data
+        for (const username of otherUsernames) {
+          fetchUserProfile(username);
+        }
+      }
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -47,44 +95,122 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  const fetchChatRoomsQuietly = async () => {
+    try {
+      const rooms = await apiService.getChatRooms();
+      setChatRooms(rooms);
+    } catch (error) {
+      // Silent error handling for background polling
+      console.log('ChatList: Background fetch failed:', error);
+    }
+  };
+
+  const startPolling = () => {
+    if (isPolling || pollingIntervalRef.current) {
+      return; // Already polling
+    }
+
+    console.log('ChatList: Starting chat list polling');
+    setIsPolling(true);
+    
+    // Poll every 10 seconds for chat list updates (less frequent than individual chat)
+    pollingIntervalRef.current = setInterval(() => {
+      fetchChatRoomsQuietly();
+    }, 10000);
+  };
+
+  const stopPolling = () => {
+    console.log('ChatList: Stopping chat list polling');
+    setIsPolling(false);
+    
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchChatRooms();
   };
 
-  // Refresh chat list when screen comes into focus
+  // Refresh chat list when screen comes into focus and start polling
   useFocusEffect(
     useCallback(() => {
+      getCurrentUser();
       fetchChatRooms();
+      startPolling();
+      
+      return () => {
+        stopPolling();
+      };
     }, [])
   );
 
-
-  const getOtherUserName = (room: ChatRoom, currentUserId?: string) => {
-    // For now, we'll use a simple approach since we don't have current user ID easily available
-    // In a real app, you'd get this from your auth context
-    return room.user1_username !== room.user2_username 
-      ? (room.user1_username || room.user2_username)
-      : room.user1_username;
+  const getOtherUserName = (room: ChatRoom): string => {
+    if (!currentUser) {
+      return room.user1_username || room.user2_username || 'Unknown User';
+    }
+    
+    // Return the username that is NOT the current user
+    if (room.user1_username === currentUser.username) {
+      return room.user2_username || 'Unknown User';
+    } else {
+      return room.user1_username || 'Unknown User';
+    }
   };
 
-  const renderChatRoom = ({ item }: { item: ChatRoom }) => (
-    <TouchableOpacity
-      onPress={() => navigation.navigate('ChatRoom', {
-        roomId: item.id,
-        otherUserName: getOtherUserName(item),
-        bookTitle: item.book_title
-      })}
-    >
-      <Card style={styles.chatRoomCard}>
-        <View style={styles.chatRoomHeader}>
-          <View style={styles.avatarContainer}>
-            <Avatar 
-              seed={getOtherUserName(item)} 
-              size={50} 
-              style={styles.chatAvatar}
-            />
-          </View>
+  const getOtherUserAvatarSeed = (room: any): string | null => {
+    if (!currentUser) {
+      return null;
+    }
+    
+    const otherUsername = getOtherUserName(room);
+    
+    // First try to get avatar seed from API response
+    let avatarSeed = null;
+    if (room.user1_username === currentUser.username) {
+      avatarSeed = room.user2_avatar_seed;
+    } else {
+      avatarSeed = room.user1_avatar_seed;
+    }
+    
+    // If not available in API response, try from fetched user profiles
+    if (!avatarSeed && userProfiles[otherUsername]) {
+      avatarSeed = userProfiles[otherUsername].avatar_seed;
+    }
+    
+    console.log(`ChatList: Avatar for ${otherUsername}:`, avatarSeed); // Debug log
+    return avatarSeed || null;
+  };
+
+  const renderChatRoom = ({ item }: { item: ChatRoom }) => {
+    const otherUserName = getOtherUserName(item);
+    const avatarSeed = getOtherUserAvatarSeed(item);
+    
+    return (
+      <TouchableOpacity
+        onPress={() => navigation.navigate('ChatRoom', {
+          roomId: item.id,
+          otherUserName: otherUserName,
+          bookTitle: item.book_title
+        })}
+      >
+        <Card style={styles.chatRoomCard}>
+          <View style={styles.chatRoomHeader}>
+            <View style={styles.avatarContainer}>
+              {avatarSeed ? (
+                <Avatar 
+                  seed={avatarSeed} 
+                  size={50} 
+                  style={styles.chatAvatar}
+                />
+              ) : (
+                <View style={[styles.defaultAvatar, styles.chatAvatar]}>
+                  <Ionicons name="person" size={24} color={colors.textSecondary} />
+                </View>
+              )}
+            </View>
           <View style={styles.chatRoomInfo}>
             <Text style={styles.userName}>{getOtherUserName(item)}</Text>
             <Text style={styles.bookTitle}>📚 {item.book_title}</Text>
@@ -106,10 +232,11 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             )}
           </View>
-        </View>
-      </Card>
-    </TouchableOpacity>
-  );
+          </View>
+        </Card>
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -233,6 +360,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  defaultAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

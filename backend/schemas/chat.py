@@ -29,6 +29,8 @@ class ChatRoomOut(BaseModel):
     user2_id: UUID
     user1_username: str
     user2_username: str
+    user1_avatar_seed: Optional[str] = None
+    user2_avatar_seed: Optional[str] = None
     book_title: str
     created_at: datetime
     last_message_at: datetime
@@ -44,6 +46,8 @@ class ChatRoomWithMessages(BaseModel):
     user2_id: UUID
     user1_username: str
     user2_username: str
+    user1_avatar_seed: Optional[str] = None
+    user2_avatar_seed: Optional[str] = None
     book_title: str
     created_at: datetime
     last_message_at: datetime

@@ -45,24 +45,30 @@ class ApiService {
       async (error) => {
         const originalRequest = error.config;
         
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Handle both 401 (Unauthorized) and 403 (Forbidden) for token expiry
+        if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
           originalRequest._retry = true;
           
           try {
             // Try to refresh the token
             const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-            if (refreshToken) {
+            if (refreshToken && refreshToken !== 'undefined' && refreshToken !== 'null') {
+              console.log('ApiService: Attempting token refresh due to', error.response?.status, 'error');
               const newTokens = await this.refreshAccessToken(refreshToken);
               
               // Update the original request with new token
               originalRequest.headers.Authorization = `Bearer ${newTokens.access_token}`;
               
+              console.log('ApiService: Token refreshed, retrying original request');
               // Retry the original request
               return this.api(originalRequest);
+            } else {
+              console.log('ApiService: No valid refresh token found, clearing auth data');
+              await this.clearAuthData();
             }
           } catch (refreshError) {
             // Refresh failed, clear auth data and redirect to login
-            console.log('Token refresh failed:', refreshError);
+            console.log('ApiService: Token refresh failed:', refreshError);
             await this.clearAuthData();
           }
         }
@@ -377,6 +383,15 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Failed to get profile');
+    }
+  }
+
+  async getUserProfile(username: string): Promise<User> {
+    try {
+      const response: AxiosResponse<User> = await this.api.get(`/profile/${username}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to get user profile');
     }
   }
 
