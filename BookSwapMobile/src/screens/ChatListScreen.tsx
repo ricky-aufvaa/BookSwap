@@ -20,6 +20,7 @@ import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
 import { RootStackParamList, ChatRoom } from '../types';
 import { apiService } from '../services/api';
+import { formatRelativeTime } from '../utils/dateUtils';
 
 type ChatListScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatList'>;
 type ChatListScreenRouteProp = RouteProp<RootStackParamList, 'ChatList'>;
@@ -58,19 +59,6 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
     }, [])
   );
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
 
   const getOtherUserName = (room: ChatRoom, currentUserId?: string) => {
     // For now, we'll use a simple approach since we don't have current user ID easily available
@@ -108,7 +96,7 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
           </View>
           <View style={styles.chatRoomMeta}>
             <Text style={styles.timeText}>
-              {formatTime(item.last_message_at)}
+              {formatRelativeTime(item.last_message_at)}
             </Text>
             {item.unread_count && item.unread_count > 0 && (
               <View style={styles.unreadBadge}>

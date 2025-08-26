@@ -18,10 +18,11 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import Input from '../components/Input';
 import BookCard from '../components/BookCard';
 import Card from '../components/Card';
+import BookOwnersModal from '../components/BookOwnersModal';
 import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing, layout } from '../constants/spacing';
-import { TabParamList, GoogleBook, RootStackParamList } from '../types';
+import { TabParamList, GoogleBook, RootStackParamList, User } from '../types';
 import { apiService } from '../services/api';
 
 type SearchScreenNavigationProp = CompositeNavigationProp<
@@ -40,6 +41,12 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
   const [searchResults, setSearchResults] = useState<GoogleBook[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalBookTitle, setModalBookTitle] = useState('');
+  const [bookOwners, setBookOwners] = useState<User[]>([]);
+  const [ownersLoading, setOwnersLoading] = useState(false);
 
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
@@ -74,18 +81,8 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
   const handleBookPress = async (book: GoogleBook) => {
     // Navigate to book details or show owners
     if (book.available_in_city) {
-      // Show book owners
-      Alert.alert(
-        'Book Available',
-        `This book is available from ${book.local_owners_count} owner(s) in your city. Would you like to see who owns it?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Show Owners',
-            onPress: () => showBookOwners(book.title),
-          },
-        ]
-      );
+      // Show book owners modal directly - no alert needed
+      showBookOwners(book.title);
     } else {
       Alert.alert(
         'Book Not Available',
@@ -99,11 +96,11 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
               
             const newBook =  apiService.addBook({
               title: book.title.trim(),
-              author: book.author.trim(),
+              author: (book.author || '').trim(),
       });
 
       console.log('Book added successfully:', newBook);
-              Alert.alert(`${book.title} by ${book.author}`, `added successfully to your library!`);
+              Alert.alert(`${book.title} by ${book.author || 'Unknown Author'}`, `added successfully to your library!`);
             },
           },
         ]
@@ -113,55 +110,53 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
 
   const showBookOwners = async (bookTitle: string) => {
     try {
-      setLoading(true);
-      const owners = await apiService.searchBookOwners(bookTitle);
+      setModalBookTitle(bookTitle);
+      setModalVisible(true);
+      setOwnersLoading(true);
+      setBookOwners([]);
       
-      if (owners.length === 0) {
-        Alert.alert('No Owners Found', 'No owners found for this book in your city.');
-        return;
-      }
-
-      // Show owners in an alert with contact options
-      const ownersList = owners.map((owner, index) => 
-        `${index + 1}. ${owner.username} (${owner.city})`
-      ).join('\n');
-
-      Alert.alert(
-        'Book Owners',
-        `The following people own "${bookTitle}":\n\n${ownersList}`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Contact First Owner',
-            onPress: () => contactOwner(owners[0], bookTitle),
-          },
-        ]
-      );
+      const owners = await apiService.searchBookOwners(bookTitle);
+      setBookOwners(owners);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to find book owners');
+      setModalVisible(false);
     } finally {
-      setLoading(false);
+      setOwnersLoading(false);
     }
   };
 
-  const contactOwner = async (owner: any, bookTitle: string) => {
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setModalBookTitle('');
+    setBookOwners([]);
+    setOwnersLoading(false);
+  };
+
+  const handleContactOwner = async (owner: User) => {
     try {
+      // Close modal first
+      setModalVisible(false);
+      
       // Create or get existing chat room
       const chatRoom = await apiService.createOrGetChatRoom({
         other_user_id: owner.id,
-        book_title: bookTitle
+        book_title: modalBookTitle
       });
 
       // Navigate to chat room
       navigation.navigate('ChatRoom', {
         roomId: chatRoom.id,
         otherUserName: owner.username,
-        bookTitle: bookTitle
+        bookTitle: modalBookTitle
       });
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to start chat');
+    } finally {
+      // Reset modal state
+      handleCloseModal();
     }
   };
+
 
   const renderBookItem = ({ item, index }: { item: GoogleBook; index: number }) => (
     <Animatable.View
@@ -295,6 +290,16 @@ const SearchScreen: React.FC<Props> = ({ navigation }) => {
           onEndReachedThreshold={0.1}
         />
       </View>
+
+      {/* Book Owners Modal */}
+      <BookOwnersModal
+        visible={modalVisible}
+        onClose={handleCloseModal}
+        bookTitle={modalBookTitle}
+        owners={bookOwners}
+        loading={ownersLoading}
+        onContactOwner={handleContactOwner}
+      />
     </SafeAreaView>
   );
 };

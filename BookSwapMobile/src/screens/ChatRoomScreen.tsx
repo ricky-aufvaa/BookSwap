@@ -37,6 +37,8 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -61,12 +63,23 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
 
   useEffect(() => {
     fetchMessages();
+    getCurrentUser();
   }, [roomId]);
+
+  const getCurrentUser = async () => {
+    try {
+      const user = await apiService.getStoredUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Error getting current user:', error);
+    }
+  };
 
   const fetchMessages = async () => {
     try {
-      const chatRoom: ChatRoom = await apiService.getChatRoomWithMessages(roomId);
-      setMessages(chatRoom.messages || []);
+      const chatRoomData: ChatRoom = await apiService.getChatRoomWithMessages(roomId);
+      setChatRoom(chatRoomData);
+      setMessages(chatRoomData.messages || []);
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -99,9 +112,23 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
 
 
   const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
-    const isMyMessage = item.sender_username !== otherUserName;
+    // Properly identify if this is the current user's message
+    const isMyMessage = currentUser && item.sender_username === currentUser.username;
     const showTime = index === 0 || 
       new Date(item.created_at).getTime() - new Date(messages[index - 1]?.created_at).getTime() > 300000; // 5 minutes
+
+    // Get the correct avatar seed for the message sender
+    const getAvatarSeed = () => {
+      if (isMyMessage) {
+        // For current user's messages, use their avatar_seed
+        return currentUser?.avatar_seed;
+      } else {
+        // For other user's messages, we need to get their avatar_seed
+        // Since we don't have it in the message, we'll use their username as fallback
+        // In a real app, you'd want to fetch user profiles or include avatar_seed in messages
+        return item.sender_username;
+      }
+    };
 
     return (
       <View style={[
@@ -114,7 +141,7 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
         ]}>
           {!isMyMessage && (
             <Avatar 
-              seed={item.sender_username} 
+              seed={getAvatarSeed()} 
               size={32} 
               style={styles.messageAvatar}
             />
@@ -132,7 +159,7 @@ const ChatRoomScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
           {isMyMessage && (
             <Avatar 
-              seed={item.sender_username} 
+              seed={getAvatarSeed()} 
               size={32} 
               style={styles.messageAvatar}
             />
