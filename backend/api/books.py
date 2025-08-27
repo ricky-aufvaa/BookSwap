@@ -18,7 +18,7 @@ async def add_book(book: BookCreate, db: AsyncSession = Depends(get_db), current
     # Search for thumbnail from Google Books API
     thumbnail_url = None
     try:
-        google_books = await search_google_books(book.title, max_results=1)
+        google_books = await search_google_books(book.title, max_results=10)
         if google_books and len(google_books) > 0:
             thumbnail_url = google_books[0].get("thumbnail")
             print(f"Found thumbnail for '{book.title}': {thumbnail_url}")
@@ -120,31 +120,45 @@ async def search_books(query: str, db: AsyncSession = Depends(get_db), current_u
 @router.get("/search-owners", response_model=list[UserOut])
 async def search_book_owners(
     book_title: str,
+    book_id: str = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Find all users in my city who own the given book
+    Find all users in my city who own the given book.
+    Returns each user only once, even if they own multiple copies of the same book.
     """
     if not book_title.strip():
         return []
 
+    # Build the query conditions
+    query_conditions = [
+        Book.title.ilike(f"%{book_title}%"),
+        User.city == current_user.city,
+        User.id != current_user.id  # Exclude self
+    ]
+    
+    # If book_id is provided (local database book ID), add it to get specific book
+    if book_id and book_id.strip():
+        query_conditions.append(Book.id == book_id)
+
     # Find users in the same city who own the book
+    # Use DISTINCT on User.id to ensure each user appears only once
     result = await db.execute(
         select(User)
-        .join(Book)
-        .where(
-            Book.title.ilike(book_title),
-            User.city == current_user.city,
-            User.id != current_user.id  # Exclude self
-        )
+        .join(Book, User.id == Book.owner_id)
+        .where(*query_conditions)
+        .distinct(User.id)
     )
     owners = result.scalars().all()
 
     if not owners:
+        search_criteria = f"'{book_title}'"
+        if book_id:
+            search_criteria += f" with ID '{book_id}'"
         raise HTTPException(
             status_code=404,
-            detail=f"No users in {current_user.city} own '{book_title}'"
+            detail=f"No users in {current_user.city} own {search_criteria}"
         )
 
     return owners

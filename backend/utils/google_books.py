@@ -25,6 +25,7 @@ async def search_google_books(query: str, max_results: int = 10):
             books = []
             for item in data.get("items", []):
                 vol = item["volumeInfo"]
+                book_id = item.get("id",{})
                 sale_info = item.get("saleInfo", {})
                 
                 # Calculate a relevance score based on multiple factors
@@ -88,6 +89,7 @@ async def search_google_books(query: str, max_results: int = 10):
                     "ratings_count": ratings_count,
                     # "page_count": page_count,
                     "categories": vol.get("categories", []),
+                    "book_id": book_id,
                     "relevance_score": relevance_score
                 }
                 

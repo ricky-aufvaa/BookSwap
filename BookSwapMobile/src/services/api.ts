@@ -288,10 +288,15 @@ class ApiService {
     }
   }
 
-  async searchBookOwners(bookTitle: string): Promise<User[]> {
+  async searchBookOwners(bookTitle: string, bookId?: string): Promise<User[]> {
     try {
+      const params: any = { book_title: bookTitle };
+      if (bookId) {
+        params.book_id = bookId;
+      }
+      
       const response: AxiosResponse<User[]> = await this.api.get('/books/search-owners', {
-        params: { book_title: bookTitle },
+        params,
       });
       return response.data;
     } catch (error: any) {

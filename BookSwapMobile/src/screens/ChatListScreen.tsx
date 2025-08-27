@@ -72,7 +72,7 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
   const fetchChatRooms = async () => {
     try {
       // Add timeout for testing the animation
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const rooms = await apiService.getChatRooms();
       console.log('ChatList: Fetched rooms:', JSON.stringify(rooms[0], null, 2)); // Debug log

@@ -35,7 +35,7 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
         username=user.username,
         email=user.email,
         password_hash=hash_password(user.password),
-        city=user.city,
+        city=user.city.lower().strip() if user.city else None,
         avatar_seed=user.avatar_seed
     )
     db.add(db_user)
