@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LottieView from "lottie-react-native"; 
 import {
   View,
   Text,
@@ -40,13 +41,16 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [loggingOut, setLoggingOut] = useState(false);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
-
+  
   useEffect(() => {
     loadUserData();
   }, []);
 
   const loadUserData = async () => {
     try {
+      // Add timeout for testing the animation
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       // First try to get fresh user data from backend, fallback to stored data
       let userData = null;
       try {
@@ -116,22 +120,42 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centerContainer}>
-          <Animatable.View
-            animation="pulse"
-            iterationCount="infinite"
-            style={styles.loadingCard}
-          >
-            <Ionicons name="person-outline" size={48} color={colors.textTertiary} />
-            <Text style={styles.loadingText}>Loading profile...</Text>
-          </Animatable.View>
+  // if (loading) {
+  //   return (
+  //     <SafeAreaView style={styles.container}>
+  //       <View style={styles.centerContainer}>
+  //         <Animatable.View
+  //           animation="pulse"
+  //           iterationCount="infinite"
+  //           style={styles.loadingCard}
+  //         >
+  //           <Ionicons name="person-outline" size={48} color={colors.textTertiary} />
+  //           <Text style={styles.loadingText}>Loading profile...</Text>
+  //         </Animatable.View>
+  //       </View>
+  //     </SafeAreaView>
+  //   );
+  // }
+      if (loading) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.centerContainer}>
+        <View style={styles.lottieContainer}>
+          <LottieView
+            source={require("../../assets/profile.json")}
+            autoPlay
+            loop
+            style={styles.lottieAnimation}
+            resizeMode="contain"
+          />
         </View>
-      </SafeAreaView>
-    );
-  }
+        <Text style={styles.loadingText}>Loading your library...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -329,8 +353,8 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    // justifyContent: 'center',
-    // alignItems: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingCard: {
     alignItems: 'center',
@@ -481,6 +505,17 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
     marginBottom: spacing.xs,
+  },
+    lottieContainer: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  lottieAnimation: {
+    width: 200,
+    height: 200,
   },
 });
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LottieView from "lottie-react-native"; 
 import {
   View,
   Text,
@@ -60,6 +61,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       setUser(userData);
       setRecentBooks(booksData.slice(0, 3)); // Show only recent 3 books
       setTotalBooks(booksData.length)
+      
     } catch (error: any) {
       console.error('HomeScreen: Error loading data:', error);
       Alert.alert('Error', 'Failed to load data');
@@ -81,22 +83,41 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     return 'Good evening';
   };
 
+  // if (loading) {
+  //   return (
+  //     <SafeAreaView style={styles.container}>
+  //       <View style={styles.loadingContainer}>
+  //         <Animatable.View
+
+  //           animation="pulse"
+  //           iterationCount="infinite"
+  //           style={styles.loadingCard}
+  //         >
+  //           <Ionicons name="book-outline" size={48} color={colors.textTertiary} />
+  //           <Text style={styles.loadingText}>Loading your library...</Text>
+  //         </Animatable.View>
+  //       </View>
+  //     </SafeAreaView>
+  //   );
+  // }
   if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Animatable.View
-            animation="pulse"
-            iterationCount="infinite"
-            style={styles.loadingCard}
-          >
-            <Ionicons name="book-outline" size={48} color={colors.textTertiary} />
-            <Text style={styles.loadingText}>Loading your library...</Text>
-          </Animatable.View>
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.loadingContainer}>
+        <View style={styles.lottieContainer}>
+          <LottieView
+            source={require("../../assets/Book.json")}
+            autoPlay
+            loop
+            style={styles.lottieAnimation}
+            resizeMode="contain"
+          />
         </View>
-      </SafeAreaView>
-    );
-  }
+        <Text style={styles.loadingText}>Loading your library...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
   return (
     <SafeAreaView style={styles.container}>
@@ -277,6 +298,17 @@ const styles = StyleSheet.create({
   loadingCard: {
     alignItems: 'center',
     padding: spacing.xl,
+  },
+  lottieContainer: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  lottieAnimation: {
+    width: 200,
+    height: 200,
   },
   loadingText: {
     ...textStyles.body,

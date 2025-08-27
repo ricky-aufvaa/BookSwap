@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import LottieView from "lottie-react-native";
 import {
   View,
   Text,
@@ -70,6 +71,9 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
 
   const fetchChatRooms = async () => {
     try {
+      // Add timeout for testing the animation
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
       const rooms = await apiService.getChatRooms();
       console.log('ChatList: Fetched rooms:', JSON.stringify(rooms[0], null, 2)); // Debug log
       setChatRooms(rooms);
@@ -253,6 +257,25 @@ const ChatListScreen: React.FC<Props> = ({ navigation }) => {
     </View>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <View style={styles.lottieContainer}>
+            <LottieView
+              source={require("../../assets/messages.json")}
+              autoPlay
+              loop
+              style={styles.lottieAnimation}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.loadingText}>Loading your messages...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -373,6 +396,27 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lottieContainer: {
+    width: 300,
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  lottieAnimation: {
+    width: 300,
+    height: 300,
+  },
+  loadingText: {
+    ...textStyles.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
   },
 });
 

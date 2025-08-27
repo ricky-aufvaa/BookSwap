@@ -1,31 +1,15 @@
-import React, { useEffect, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Dimensions,
-  TouchableWithoutFeedback,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
-import {
-  PanGestureHandler,
-  PanGestureHandlerGestureEvent,
-  ScrollView,
-} from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedGestureHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  runOnJS,
-  interpolate,
-  Extrapolate,
-} from 'react-native-reanimated';
 import Avatar from './Avatar';
 import Button from './Button';
 import Card from './Card';
@@ -35,16 +19,6 @@ import { colors } from '../constants/colors';
 import { textStyles } from '../constants/typography';
 import { spacing } from '../constants/spacing';
 import { User } from '../types';
-import { apiService } from '../services/api';
-
-const { height: screenHeight } = Dimensions.get('window');
-
-// Bottom sheet snap points
-const SNAP_POINTS = {
-  CLOSED: screenHeight,
-  PEEK: screenHeight * 0.4, // 40% of screen
-  EXPANDED: screenHeight * 0.2, // 80% of screen (20% from top)
-};
 
 interface BookOwnersModalProps {
   visible: boolean;
@@ -67,104 +41,6 @@ const BookOwnersModal: React.FC<BookOwnersModalProps> = ({
   onContactOwner,
   onAddToLibrary,
 }) => {
-  const translateY = useSharedValue(SNAP_POINTS.CLOSED);
-  const backdropOpacity = useSharedValue(0);
-
-  // Initialize animation when modal becomes visible
-  useEffect(() => {
-    if (visible) {
-      translateY.value = withSpring(SNAP_POINTS.PEEK, {
-        damping: 50,
-        stiffness: 200,
-      });
-      backdropOpacity.value = withTiming(1, { duration: 300 });
-    } else {
-      translateY.value = withSpring(SNAP_POINTS.CLOSED, {
-        damping: 50,
-        stiffness: 200,
-      });
-      backdropOpacity.value = withTiming(0, { duration: 300 });
-    }
-  }, [visible]);
-
-  const handleClose = useCallback(() => {
-    translateY.value = withSpring(SNAP_POINTS.CLOSED, {
-      damping: 50,
-      stiffness: 200,
-    });
-    backdropOpacity.value = withTiming(0, { duration: 300 });
-    setTimeout(() => {
-      onClose();
-    }, 300);
-  }, [onClose]);
-
-  const snapToPoint = useCallback((point: number) => {
-    translateY.value = withSpring(point, {
-      damping: 50,
-      stiffness: 200,
-    });
-  }, []);
-
-  const gestureHandler = useAnimatedGestureHandler<
-    PanGestureHandlerGestureEvent,
-    { startY: number }
-  >({
-    onStart: (_, context) => {
-      context.startY = translateY.value;
-    },
-    onActive: (event, context) => {
-      const newY = context.startY + event.translationY;
-      // Constrain movement between expanded and closed positions
-      translateY.value = Math.max(SNAP_POINTS.EXPANDED, Math.min(SNAP_POINTS.CLOSED, newY));
-    },
-    onEnd: (event) => {
-      const velocity = event.velocityY;
-      const currentY = translateY.value;
-      
-      // Determine snap point based on position and velocity
-      if (velocity > 500) {
-        // Fast downward swipe - close
-        runOnJS(handleClose)();
-      } else if (velocity < -500) {
-        // Fast upward swipe - expand
-        snapToPoint(SNAP_POINTS.EXPANDED);
-      } else {
-        // Snap to nearest point based on position
-        const midPoint = (SNAP_POINTS.PEEK + SNAP_POINTS.EXPANDED) / 2;
-        if (currentY < midPoint) {
-          snapToPoint(SNAP_POINTS.EXPANDED);
-        } else if (currentY > SNAP_POINTS.PEEK + 100) {
-          runOnJS(handleClose)();
-        } else {
-          snapToPoint(SNAP_POINTS.PEEK);
-        }
-      }
-    },
-  });
-
-  const bottomSheetStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: translateY.value }],
-    };
-  });
-
-  const backdropStyle = useAnimatedStyle(() => {
-    return {
-      opacity: backdropOpacity.value,
-    };
-  });
-
-  const handleBarStyle = useAnimatedStyle(() => {
-    const progress = interpolate(
-      translateY.value,
-      [SNAP_POINTS.EXPANDED, SNAP_POINTS.PEEK],
-      [1, 0.6],
-      Extrapolate.CLAMP
-    );
-    return {
-      opacity: progress,
-    };
-  });
 
   const renderOwnerItem = (owner: User, index: number) => (
     <Animatable.View
@@ -243,77 +119,67 @@ const BookOwnersModal: React.FC<BookOwnersModalProps> = ({
     return (
       <ScrollView
         style={styles.ownersList}
-        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.ownersListContent}
-        bounces={false}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        alwaysBounceVertical={false}
+        scrollEventThrottle={16}
+        nestedScrollEnabled={true}
+        keyboardShouldPersistTaps="handled"
+        removeClippedSubviews={false}
+        scrollEnabled={true}
+        directionalLockEnabled={false}
+        overScrollMode="auto"
+        pagingEnabled={false}
+        contentInsetAdjustmentBehavior="automatic"
       >
         {owners.map((owner, index) => renderOwnerItem(owner, index))}
       </ScrollView>
     );
   };
 
-  if (!visible) return null;
-
   return (
     <Modal
       visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={handleClose}
-      statusBarTranslucent
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* Backdrop */}
-        <TouchableWithoutFeedback onPress={handleClose}>
-          <Animated.View style={[styles.backdrop, backdropStyle]} />
-        </TouchableWithoutFeedback>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.title} numberOfLines={2}>
+            Who has "{bookTitle}"?
+          </Text>
+          <View style={styles.placeholder} />
+        </View>
 
-        {/* Bottom Sheet */}
-        <PanGestureHandler onGestureEvent={gestureHandler}>
-          <Animated.View style={[styles.bottomSheet, bottomSheetStyle]}>
-            {/* Handle Bar */}
-            <Animated.View style={[styles.handleBar, handleBarStyle]} />
-            
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerContent}>
-                <Text style={styles.title} numberOfLines={2}>
-                  Who has "{bookTitle}"?
-                </Text>
-                <TouchableOpacity
-                  onPress={handleClose}
-                  style={styles.closeButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons name="close" size={24} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-              {!loading && owners.length > 0 && (
-                <Text style={styles.subtitle}>
-                  {owners.length} {owners.length === 1 ? 'person' : 'people'} in your city
-                </Text>
-              )}
-              
-              {/* Add to Library Button */}
-              {onAddToLibrary && (
-                <View style={styles.addToLibraryContainer}>
-                  <Button
-                    title="Add to My Library"
-                    onPress={onAddToLibrary}
-                    variant="secondary"
-                    size="medium"
-                    icon="library-outline"
-                  />
-                </View>
-              )}
-            </View>
+        {!loading && owners.length > 0 && (
+          <Text style={styles.subtitle}>
+            {owners.length} {owners.length === 1 ? 'person' : 'people'} in your city
+          </Text>
+        )}
+        
+        {/* Add to Library Button */}
+        {onAddToLibrary && (
+          <View style={styles.addToLibraryContainer}>
+            <Button
+              title="Add to My Library"
+              onPress={onAddToLibrary}
+              variant="secondary"
+              size="medium"
+              icon="library-outline"
+            />
+          </View>
+        )}
 
-            {/* Content */}
-            <View style={styles.content}>
-              {renderContent()}
-            </View>
-          </Animated.View>
-        </PanGestureHandler>
+        {/* Content - Scrollable Area */}
+        <View style={styles.content}>
+          {renderContent()}
+        </View>
       </View>
     </Modal>
   );
@@ -322,64 +188,40 @@ const BookOwnersModal: React.FC<BookOwnersModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  bottomSheet: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: screenHeight,
     backgroundColor: colors.background,
-    borderTopLeftRadius: spacing.borderRadius.xl,
-    borderTopRightRadius: spacing.borderRadius.xl,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  handleBar: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.borderLight,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-  },
-  headerContent: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  closeButton: {
+    padding: spacing.sm,
   },
   title: {
     ...textStyles.h3,
     color: colors.textPrimary,
     flex: 1,
-    marginRight: spacing.md,
+    textAlign: 'center',
+  },
+  placeholder: {
+    width: 40, // Same width as close button for centering
   },
   subtitle: {
     ...textStyles.bodySmall,
     color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
-  closeButton: {
-    padding: spacing.xs,
-    marginTop: -spacing.xs,
-    marginRight: -spacing.xs,
+  addToLibraryContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   content: {
     flex: 1,
@@ -464,9 +306,6 @@ const styles = StyleSheet.create({
   },
   ownerTrustInfo: {
     marginTop: spacing.xs,
-  },
-  addToLibraryContainer: {
-    marginTop: spacing.md,
   },
 });
 

@@ -117,7 +117,7 @@ export type TabParamList = {
 export interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' ;
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;

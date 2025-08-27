@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Animatable from 'react-native-animatable';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from "lottie-react-native";
 
 import AuthNavigator from './AuthNavigator';
 import SwipeableTabNavigator from './SwipeableTabNavigator';
@@ -52,6 +53,9 @@ const AppNavigator: React.FC = () => {
         console.log('AppNavigator: No valid token found, setting authenticated to false');
         setIsAuthenticated(false);
       }
+      
+      // Add minimum loading time to show Lottie animation (remove this in production)
+      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
     } catch (error) {
       console.error('AppNavigator: Error checking auth status:', error);
       setIsAuthenticated(false);
@@ -71,15 +75,19 @@ const AppNavigator: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Animatable.View
-          animation="pulse"
-          iterationCount="infinite"
-          style={styles.loadingContent}
-        >
-          <Ionicons name="book" size={64} color={colors.accent} />
+        <View style={styles.loadingContent}>
+          <View style={styles.lottieContainer}>
+            <LottieView
+              source={require("../../assets/Book.json")}
+              autoPlay
+              loop
+              style={styles.lottieAnimation}
+              resizeMode="contain"
+            />
+          </View>
           <Animatable.Text
-            animation="fadeIn"
-            delay={500}
+            // animation="fadeIn"
+            // delay={500}
             style={styles.loadingText}
           >
             BookSwap
@@ -91,7 +99,7 @@ const AppNavigator: React.FC = () => {
           >
             Share books, build community
           </Animatable.Text>
-        </Animatable.View>
+        </View>
       </View>
     );
   }
@@ -168,6 +176,17 @@ const styles = StyleSheet.create({
   loadingContent: {
     alignItems: 'center',
     padding: spacing.xl,
+  },
+  lottieContainer: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  lottieAnimation: {
+    width: 200,
+    height: 200,
   },
   loadingText: {
     ...textStyles.h1,
